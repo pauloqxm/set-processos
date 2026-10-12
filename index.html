@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catálogo de Processos · SET / IDT</title>
+    <meta name="description" content="Catálogo virtual e interativo dos macrofluxos de processos da Secretaria do Trabalho do Ceará." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z' fill='%2339b54a'/%3E%3Ccircle cx='12' cy='10' r='3' fill='%23fff'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="wrap topbar-inner">
+        <a class="topbar-logos" href="#/" aria-label="Logos institucionais - ir para o início">
+          <img class="logo logo-set" src="assets/img/logo-set.jpg" alt="Ceará — Governo do Estado · Secretaria do Trabalho" width="120" height="120" />
+          <img class="logo logo-idt" src="assets/img/logo-idt.png" alt="Instituto de Desenvolvimento do Trabalho" width="220" height="72" />
+        </a>
+        <div class="topbar-title">
+          <span class="eyebrow">SET / IDT · Secretaria do Trabalho</span>
+          <h1>Catálogo de Mapeamentos de Processos</h1>
+        </div>
+        <nav class="nav" id="nav" aria-label="Navegação principal"></nav>
+      </div>
+    </header>
+
+    <main class="wrap" id="app" tabindex="-1">
+      <div class="carregando" role="status">
+        <div class="pontos"><span></span><span></span><span></span></div>
+        Carregando o catálogo...
+      </div>
+    </main>
+
+    <footer class="rodape wrap">
+      <div class="footer-strip" aria-hidden="true">
+        <span class="strip-green"></span><span class="strip-blue"></span><span class="strip-orange"></span>
+      </div>
+      <div class="rodape-linha">
+        <span>Catálogo de Processos — SET / IDT</span>
+        <span class="fonte-dados" id="fonte-dados"><span class="dot"></span><span>Conectando à planilha...</span></span>
+      </div>
+    </footer>
+
+    <div class="veu" id="veu"></div>
+    <aside class="gaveta" id="gaveta" role="dialog" aria-modal="true" aria-labelledby="gaveta-titulo" aria-hidden="true"></aside>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="data/processos-fallback.js"></script>
+    <script src="data/esteira-fallback.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 232" fill="none" role="img">
+  <title>Fluxo ludico de um processo</title>
+  <style>
+    .linha { stroke-dasharray: 7 7; animation: dash 1.3s linear infinite; }
+    .c1 { animation: sobe 4.6s ease-in-out infinite; }
+    .c2 { animation: sobe 4.6s ease-in-out -.9s infinite; }
+    .c3 { animation: sobe 4.6s ease-in-out -1.8s infinite; }
+    .c4 { animation: sobe 4.6s ease-in-out -2.7s infinite; }
+    .c5 { animation: sobe 4.6s ease-in-out -3.6s infinite; }
+    .pin { animation: pulo 2.4s ease-in-out infinite; }
+    @keyframes dash { to { stroke-dashoffset: -28; } }
+    @keyframes sobe { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+    @keyframes pulo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+    @media (prefers-reduced-motion: reduce) {
+      .linha, .c1, .c2, .c3, .c4, .c5, .pin { animation: none; }
+    }
+  </style>
+  <defs>
+    <filter id="s" x="-25%" y="-25%" width="150%" height="160%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#4d4d4d" flood-opacity=".14"/>
+    </filter>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+      <path d="M1 1.5 8.4 5 1 8.5Z" fill="#F15A24"/>
+    </marker>
+  </defs>
+  <path class="linha" d="M70 72 H474 C516 72 530 86 530 118 C530 154 514 168 474 168 H92" stroke="#F15A24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#a)"/>
+  <g class="c1" filter="url(#s)">
+    <rect x="92" y="32" width="96" height="80" rx="8" fill="#A3C3F4"/>
+    <path d="M92 40a8 8 0 0 1 8-8h80a8 8 0 0 1 8 8v14H92V40Z" fill="#3166AC"/>
+    <rect x="108" y="64" width="64" height="5" rx="2.5" fill="#3166AC" opacity=".25"/>
+    <rect x="116" y="74" width="48" height="5" rx="2.5" fill="#3166AC" opacity=".16"/>
+    <circle cx="108" cy="100" r="7" fill="#fff"/>
+    <text x="108" y="103.4" text-anchor="middle" font-family="Montserrat,system-ui,sans-serif" font-size="8" font-weight="800" fill="#3166AC">1</text>
+  </g>
+  <g class="c2" filter="url(#s)">
+    <rect x="228" y="32" width="96" height="80" rx="8" fill="#A6E7D5"/>
+    <path d="M228 40a8 8 0 0 1 8-8h80a8 8 0 0 1 8 8v14h-96V40Z" fill="#2DB39D"/>
+    <rect x="244" y="64" width="64" height="5" rx="2.5" fill="#2DB39D" opacity=".25"/>
+    <rect x="252" y="74" width="48" height="5" rx="2.5" fill="#2DB39D" opacity=".16"/>
+    <circle cx="244" cy="100" r="7" fill="#fff"/>
+    <text x="244" y="103.4" text-anchor="middle" font-family="Montserrat,system-ui,sans-serif" font-size="8" font-weight="800" fill="#2DB39D">2</text>
+  </g>
+  <g class="c3" filter="url(#s)">
+    <rect x="364" y="32" width="96" height="80" rx="8" fill="#D58B8B"/>
+    <path d="M364 40a8 8 0 0 1 8-8h80a8 8 0 0 1 8 8v14h-96V40Z" fill="#AB5B5B"/>
+    <rect x="380" y="64" width="64" height="5" rx="2.5" fill="#AB5B5B" opacity=".25"/>
+    <rect x="388" y="74" width="48" height="5" rx="2.5" fill="#AB5B5B" opacity=".16"/>
+    <circle cx="380" cy="100" r="7" fill="#fff"/>
+    <text x="380" y="103.4" text-anchor="middle" font-family="Montserrat,system-ui,sans-serif" font-size="8" font-weight="800" fill="#AB5B5B">3</text>
+  </g>
+  <g class="c4" filter="url(#s)">
+    <rect x="296" y="128" width="96" height="80" rx="8" fill="#F1B08B"/>
+    <path d="M296 136a8 8 0 0 1 8-8h80a8 8 0 0 1 8 8v14h-96v-14Z" fill="#FF863C"/>
+    <rect x="312" y="160" width="64" height="5" rx="2.5" fill="#B06134" opacity=".25"/>
+    <rect x="320" y="170" width="48" height="5" rx="2.5" fill="#B06134" opacity=".16"/>
+    <circle cx="312" cy="196" r="7" fill="#fff"/>
+    <text x="312" y="199.4" text-anchor="middle" font-family="Montserrat,system-ui,sans-serif" font-size="8" font-weight="800" fill="#FF863C">4</text>
+  </g>
+  <g class="c5" filter="url(#s)">
+    <rect x="160" y="128" width="96" height="80" rx="8" fill="#C6C4C3"/>
+    <path d="M160 136a8 8 0 0 1 8-8h80a8 8 0 0 1 8 8v14h-96v-14Z" fill="#7E7E7E"/>
+    <rect x="176" y="160" width="64" height="5" rx="2.5" fill="#7E7E7E" opacity=".25"/>
+    <rect x="184" y="170" width="48" height="5" rx="2.5" fill="#7E7E7E" opacity=".16"/>
+    <circle cx="176" cy="196" r="7" fill="#fff"/>
+    <text x="176" y="199.4" text-anchor="middle" font-family="Montserrat,system-ui,sans-serif" font-size="8" font-weight="800" fill="#7E7E7E">5</text>
+  </g>
+  <g class="pin">
+    <path d="M40 22c11.6 0 21 9.4 21 21 0 16-21 38-21 38S19 59 19 43c0-11.6 9.4-21 21-21z" fill="#405864"/>
+    <circle cx="40" cy="42" r="7" fill="#fff"/>
+    <text x="40" y="90" text-anchor="middle" font-family="Montserrat,system-ui,sans-serif" font-size="9" font-weight="800" fill="#405864">Inicio</text>
+  </g>
+  <g>
+    <rect x="2" y="151" width="76" height="34" rx="8" fill="#E8322B"/>
+    <text x="40" y="165" text-anchor="middle" font-family="Montserrat,system-ui,sans-serif" font-size="8" font-weight="800" fill="#fff">FIM DO</text>
+    <text x="40" y="176" text-anchor="middle" font-family="Montserrat,system-ui,sans-serif" font-size="8" font-weight="800" fill="#fff">PROCESSO</text>
+  </g>
+</svg>
