@@ -42,6 +42,7 @@
     globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
     trophy: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/>',
     steps: '<path d="M4 20h4v-4h4v-4h4V8h4"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/>',
   };
   const icone = (n, cls = "") => `<svg class="icon ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONES[n] || ICONES.layers}</svg>`;
 
@@ -123,6 +124,7 @@
     fluxo: null,
     jogo: [],
     jogando: false,
+    usuario: null,
   };
 
   /* ---------- Progresso (localStorage) ---------- */
@@ -144,9 +146,15 @@
       ["#/esteira", "route", "Esteira", rota === "esteira"],
       ["#/legenda", "palette", "Legenda", rota === "legenda"],
     ];
+    const perfil = estado.usuario && estado.usuario.profile;
+    const nome = perfil && (perfil.name || perfil.email || "");
     $("#nav").innerHTML = itens
       .map(([h, i, t, a]) => `<a href="${h}" class="${a ? "ativo" : ""}">${icone(i)}<span>${t}</span></a>`)
-      .join("");
+      .join("") +
+      (nome ? `<span class="nav-user" title="${esc(perfil.email || nome)}">${esc(nome.split(" ")[0])}</span>` : "") +
+      `<button type="button" class="nav-sair" id="nav-sair">${icone("logout")}<span>Sair</span></button>`;
+    const sair = $("#nav-sair");
+    if (sair) sair.addEventListener("click", () => SSO.sair());
   }
 
   function rotear() {
@@ -1193,5 +1201,10 @@
     }, 160);
   });
 
-  iniciar();
+  (async function () {
+    const usuario = await SSO.exigirLogin();
+    if (!usuario) return;
+    estado.usuario = usuario;
+    iniciar();
+  })();
 })();

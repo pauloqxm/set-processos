@@ -81,6 +81,24 @@ img { max-width: 100%; }
   transition: color .15s, background .15s, border-color .15s;
 }
 .nav a:hover, .nav a.ativo { color: var(--menu-accent); background: var(--orange-soft); border-color: #f8d3bd; }
+.nav-user {
+  display: inline-flex; align-items: center;
+  max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 600; font-size: 0.72rem; color: var(--ink-soft); padding: 0 4px;
+}
+.nav-sair {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer; font: inherit;
+  font-weight: 700; font-size: 0.78rem; color: var(--ink);
+  background: transparent; border: 1px solid var(--line);
+}
+.nav-sair:hover { color: var(--orange); background: var(--orange-soft); border-color: #f8d3bd; }
+.sso-bloqueio {
+  max-width: 520px; margin: 15vh auto; text-align: center; padding: 24px;
+}
+.sso-bloqueio h1 { margin: 0 0 12px; color: var(--ink); font-size: 1.6rem; }
+.sso-bloqueio p { color: var(--ink-soft); line-height: 1.5; }
+.sso-bloqueio a { color: var(--blue); font-weight: 700; }
 
 .eyebrow {
   font-weight: 600; font-size: 0.72rem; color: var(--ink-soft);
@@ -587,7 +605,7 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
 @media (max-width: 720px) {
   .topbar-title { display: none; }
   .topbar-inner { justify-content: space-between; }
-  .nav a span { display: none; }
+  .nav a span, .nav-sair span, .nav-user { display: none; }
   .logo-set { height: 44px; } .logo-idt { height: 32px; }
   .hero { padding: 22px; }
   .hero-texto { padding-left: 0; }
