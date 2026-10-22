@@ -673,6 +673,12 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
 .esteira-liga path.frouxo { opacity: .2; }
 .esteira-notas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
 .esteira-jogo { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.esteira-escolhe { display: grid; gap: 6px; margin-bottom: 16px; }
+.esteira-escolhe span { font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-soft); }
+.esteira-escolhe select {
+  font: inherit; font-weight: 600; color: var(--ink);
+  padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; max-width: 100%;
+}
 .esteira-controle { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; margin-top: 18px; }
 .esteira-controle .btn { min-width: 180px; padding: 12px 20px; font-size: 1rem; }
 .esteira-foco { max-width: 420px; margin: 0 auto 22px; text-align: center; }
@@ -714,7 +720,7 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
   }
 
   .nav, .proc-acoes, .barra-visoes, .progresso, .veu, .gaveta, .toast, .confete, .esteira-jogo,
-  .esteira-controle, .busca, .secao:last-child, .fonte-dados button { display: none !important; }
+  .esteira-controle, .esteira-escolhe, .busca, .secao:last-child, .fonte-dados button { display: none !important; }
   .esteira-ator, .esteira-fase, .esteira-celula, .esteira-no-head, .esteira-no.fim {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

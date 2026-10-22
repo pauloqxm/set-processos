@@ -164,7 +164,7 @@
     if (rota === "processo" && estado.porId.has(arg)) return telaProcesso(estado.porId.get(arg));
     if (rota === "estante" && CAT[arg]) return telaEstante(CAT[arg]);
     if (rota === "estantes") return telaEstantes();
-    if (rota === "esteira") return telaEsteira(arg || (estado.fluxos[0] && estado.fluxos[0].id));
+    if (rota === "esteira") return arg ? telaEsteira(arg) : telaListaEsteiras();
     if (rota === "legenda") return telaLegenda(UNID[arg] ? arg : null);
     return telaInicio();
   }
@@ -279,14 +279,10 @@
       </section>
       ${estado.fluxos.length ? `<section class="secao">
         <div class="secao-head">
-          <div><span class="eyebrow">Caminho do cidadão</span><h2>Esteira de crédito</h2></div>
-          <a class="link-acao" href="#/esteira">Abrir esteira ${icone("right")}</a>
+          <div><span class="eyebrow">Caminho do cidadão</span><h2>${plural(estado.fluxos.length, "esteira", "esteiras")}</h2></div>
+          <a class="link-acao" href="#/esteira">Ver todas ${icone("right")}</a>
         </div>
-        <a class="processo-card" href="#/esteira/${encodeURIComponent(estado.fluxos[0].id)}">
-          <span class="codigo" style="color:var(--orange)">${icone("route")} ESTEIRA LÚDICA</span>
-          <h3>${esc(estado.fluxos[0].nome)}</h3>
-          <div class="apoio">Raias por quem faz, decisões Sim/Não e o caminho até o crédito — sem a complexidade do Bizagi.</div>
-        </a>
+        <div class="processos">${estado.fluxos.slice(0, 6).map(cartaoFluxo).join("")}</div>
       </section>` : ""}`;
 
     montarTela("home", html, "");
@@ -743,7 +739,37 @@
 
   /* ---------- Tela: Legenda ---------- */
   function corAtor(nome) {
-    return C.ESTEIRA_ATORES.find((a) => a.id === nome) || { forte: "#7e7e7e", clara: "#ececec" };
+    const conhecido = C.ESTEIRA_ATORES.find((a) => a.id === nome);
+    if (conhecido) return conhecido;
+    const paleta = C.ESTEIRA_PALETA || C.ESTEIRA_ATORES;
+    let h = 0;
+    for (let i = 0; i < (nome || "").length; i++) h = (h * 31 + nome.charCodeAt(i)) >>> 0;
+    const p = paleta[h % paleta.length] || { forte: "#7e7e7e", clara: "#ececec" };
+    return { id: nome, forte: p.forte, clara: p.clara };
+  }
+
+  function cartaoFluxo(f, i = 0) {
+    const etapas = f.nos.filter((n) => n.tipo === "atividade").length;
+    return `<a class="processo-card" href="#/esteira/${encodeURIComponent(f.id)}" style="animation-delay:${Math.min(i, 20) * 30}ms">
+      <span class="codigo" style="color:var(--orange)">${icone("route")} ESTEIRA</span>
+      <h3>${esc(f.nome)}</h3>
+      <div class="meta">
+        <span class="chip chip-orange">${icone("rows")}${plural(f.atores.length, "raia", "raias")}</span>
+        <span class="chip chip-green">${icone("steps")}${plural(etapas, "etapa", "etapas")}</span>
+      </div>
+    </a>`;
+  }
+
+  function telaListaEsteiras() {
+    const html = `
+      <div class="migalhas"><a href="#/">Início</a> › <span>Esteira</span></div>
+      <section class="painel">
+        <span class="eyebrow">${icone("route")} Caminho do cidadão</span>
+        <h2>Esteiras</h2>
+        <p class="apoio">Escolha um fluxo. As raias mostram quem faz cada passo. Extraído dos mapeamentos em Word — conferir a coluna observações na planilha quando o texto original era incompleto.</p>
+      </section>
+      <div class="processos" style="margin-top:18px">${estado.fluxos.map(cartaoFluxo).join("")}</div>`;
+    montarTela("esteira", html, "Esteiras");
   }
 
   function lerJogo(id) {
@@ -828,14 +854,15 @@
     const etapa = estado.jogo.length;
     const totalFeliz = Math.max(caminhoFeliz(fluxo).length, 1);
     const pct = estado.jogando ? Math.round((etapa / totalFeliz) * 100) : 0;
-    const atores = fluxo.atores.length ? fluxo.atores : [{ id: "Cliente", forte: "#39b54a", clara: "#e8f7ea" }];
+    const atores = fluxo.atores.length ? fluxo.atores : [{ id: "—", forte: "#7e7e7e", clara: "#ececec" }];
+    const atorPadrao = atores[0].id;
 
     const celulas = [`<div class="esteira-fase"></div>`];
     fluxo.fases.forEach((fase) => celulas.push(`<div class="esteira-fase">${esc(fase)}</div>`));
     atores.forEach((ator) => {
       celulas.push(`<div class="esteira-ator" style="background:${ator.forte}">${esc(ator.id)}</div>`);
       fluxo.fases.forEach((fase) => {
-        const nos = fluxo.nos.filter((n) => (n.ator || "Cliente") === ator.id && n.fase === fase);
+        const nos = fluxo.nos.filter((n) => (n.ator || atorPadrao) === ator.id && n.fase === fase);
         celulas.push(`<div class="esteira-celula" style="--clara:${ator.clara}">${nos.map((n) => cartaoEsteira(n, {
           atual: atual && atual.id === n.id,
           feito: estado.jogando && feitos.has(n.id) && (!atual || atual.id !== n.id),
@@ -857,8 +884,12 @@
              <button class="btn btn-run" id="esteira-avancar" data-ir="${atual ? (proximoPadrao(atual) || "") : ""}">${icone("right")} Avançar etapa</button>`;
 
     const html = `
-      <div class="migalhas"><a href="#/">Início</a> › <span>Esteira</span></div>
+      <div class="migalhas"><a href="#/">Início</a> › <a href="#/esteira">Esteira</a> › <span>${esc(fluxo.nome)}</span></div>
       <section class="painel">
+        <label class="esteira-escolhe">
+          <span>Trocar esteira</span>
+          <select id="esteira-sel">${estado.fluxos.map((f) => `<option value="${esc(f.id)}" ${f.id === fluxo.id ? "selected" : ""}>${esc(f.nome)}</option>`).join("")}</select>
+        </label>
         <div class="proc-topo">
           <div>
             <span class="eyebrow">${icone("route")} Caminho do cidadão</span>
@@ -918,6 +949,11 @@
       telaEsteira(fluxo.id);
     });
     $("#esteira-print").addEventListener("click", () => window.print());
+    const sel = $("#esteira-sel");
+    if (sel) sel.addEventListener("change", () => {
+      estado.jogando = false;
+      location.hash = `#/esteira/${encodeURIComponent(sel.value)}`;
+    });
     requestAnimationFrame(() => {
       desenharArestas(fluxo, estado.jogo);
       const board = $("#esteira-board");
@@ -963,6 +999,7 @@
         ${n.ator ? `<span class="chip" style="background:${cor.clara};color:#333"><span class="dot" style="background:${cor.forte}"></span>${esc(n.ator)}</span>` : ""}
         <p class="descricao">${esc(n.descricao)}</p>
         ${n.prazo ? `<div><h4>Prazo</h4><span class="chip chip-orange">${esc(n.prazo)}</span></div>` : ""}
+        ${n.observacoes ? `<div><h4>Observações para ajuste</h4><p class="descricao">${esc(n.observacoes)}</p></div>` : ""}
         ${n.sistema ? `<div><h4>Onde fazer</h4><div class="sistemas">${/^https?:/i.test(n.sistema) ? `<a class="chip-sistema" href="${esc(n.sistema)}" target="_blank" rel="noopener">${icone("monitor")}${esc(n.sistema.includes("tamo") ? "Tamo Junto" : n.sistema.includes("ceara") ? "Ceará Credi" : n.sistema)}${icone("external")}</a>` : `<span class="chip-sistema">${icone("monitor")}${esc(n.sistema)}</span>`}</div></div>` : ""}
         ${estado.jogando && (n.destino || n.destinoSim) ? `<div class="filtros">
           ${n.destinoSim ? `<button class="btn btn-run btn-sm" id="e-sim">${esc(n.rotuloSim)}</button>` : ""}

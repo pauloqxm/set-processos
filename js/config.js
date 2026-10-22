@@ -18,6 +18,21 @@ window.CONFIG = (function () {
 
   const ESTEIRA_FASES = ["Cadastro", "Perfil", "Entrevista", "Documentos", "Análise", "Contrato", "Liberação", "Acompanhamento"];
 
+  const ESTEIRA_PALETA = [
+    { forte: "#39b54a", clara: "#e8f7ea" },
+    { forte: "#0071bc", clara: "#e6f3fb" },
+    { forte: "#4fb3bf", clara: "#d4f3ef" },
+    { forte: "#2db39d", clara: "#a6e7d5" },
+    { forte: "#ab5b5b", clara: "#d58b8b" },
+    { forte: "#d3a61f", clara: "#ffca75" },
+    { forte: "#405864", clara: "#9fd0d8" },
+    { forte: "#f15a24", clara: "#fff0ea" },
+    { forte: "#7fa8e6", clara: "#cae2ff" },
+    { forte: "#0d9488", clara: "#e6f7f5" },
+    { forte: "#8b5cf6", clara: "#ede9fe" },
+    { forte: "#db2777", clara: "#fce7f3" },
+  ];
+
   /* Legenda de cores (PDF modelo, página 1). A ordem de `match` importa. */
   const UNIDADES = [
     {
@@ -187,10 +202,10 @@ window.CONFIG = (function () {
   ];
 
   return {
-    CSV_URL, ESTEIRA_CSV_URL, ESTEIRA_CSV_LOCAL, ESTEIRA_ATORES, ESTEIRA_FASES,
+    CSV_URL, ESTEIRA_CSV_URL, ESTEIRA_CSV_LOCAL, ESTEIRA_ATORES, ESTEIRA_FASES, ESTEIRA_PALETA,
     UNIDADES, CATEGORIAS, SISTEMAS, SIGLAS,
     CACHE_KEY: "catalogo-set-cache-v1",
-    ESTEIRA_CACHE_KEY: "catalogo-set-esteira-v1",
+    ESTEIRA_CACHE_KEY: "catalogo-set-esteira-v2",
     PROGRESSO_KEY: "catalogo-set-progresso-v1",
     ESTEIRA_JOGO_KEY: "catalogo-set-esteira-jogo-v1",
   };

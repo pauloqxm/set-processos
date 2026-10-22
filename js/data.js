@@ -184,6 +184,7 @@ window.DADOS = (function () {
         destinoNao: limpar(l[12]),
         rotuloSim: limpar(l[13]) || "Sim",
         rotuloNao: limpar(l[14]) || "Não",
+        observacoes: limpar(l[15]),
       };
       const f = fluxos.get(idFluxo);
       if (tipo === "nota") f.notas.push(no);
@@ -193,8 +194,22 @@ window.DADOS = (function () {
     lista.forEach((f) => {
       f.porId = new Map(f.nos.map((n) => [n.id, n]));
       f.inicio = f.nos.find((n) => n.tipo === "inicio") || f.nos[0];
-      f.atores = C.ESTEIRA_ATORES.filter((a) => f.nos.some((n) => n.ator === a.id));
-      f.fases = C.ESTEIRA_FASES.filter((fase) => f.nos.some((n) => n.fase === fase));
+      const paletaDe = (nome) => {
+        const conhecido = C.ESTEIRA_ATORES.find((a) => a.id === nome);
+        if (conhecido) return conhecido;
+        let h = 0;
+        for (let i = 0; i < (nome || "").length; i++) h = (h * 31 + nome.charCodeAt(i)) >>> 0;
+        const p = (C.ESTEIRA_PALETA || C.ESTEIRA_ATORES)[h % (C.ESTEIRA_PALETA || C.ESTEIRA_ATORES).length];
+        return { id: nome, forte: p.forte, clara: p.clara };
+      };
+      const ordem = [];
+      f.nos.forEach((n) => { if (n.ator && !ordem.includes(n.ator)) ordem.push(n.ator); });
+      f.atores = ordem.map(paletaDe);
+      const vistas = [...new Set(f.nos.map((n) => n.fase).filter(Boolean))];
+      const conhecidas = (C.ESTEIRA_FASES || []).filter((fase) => vistas.includes(fase));
+      f.fases = conhecidas.concat(vistas.filter((fase) => !conhecidas.includes(fase)));
+      if (!f.fases.length) f.fases = ["Fluxo"];
+      f.nos.forEach((n) => { if (!n.fase) n.fase = f.fases[0]; });
       f.arestas = [];
       f.nos.forEach((n) => {
         if (n.destino) f.arestas.push({ de: n.id, para: n.destino, rotulo: "", tipo: "seq" });
