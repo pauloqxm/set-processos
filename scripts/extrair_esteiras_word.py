@@ -86,11 +86,61 @@ def eh_decisao(rotulo: str) -> bool:
     return "?" in rotulo
 
 
+def separar_decisao(rotulo: str) -> tuple[str | None, str]:
+    """Se o Word juntou 'passo. Pergunta?', devolve (atividade, pergunta)."""
+    rotulo = (rotulo or "").strip()
+    if "?" not in rotulo:
+        return None, rotulo
+    partes = re.split(r"(?<=[.!])\s+", rotulo, maxsplit=1)
+    if len(partes) == 2 and partes[1].endswith("?"):
+        return partes[0].strip(), partes[1].strip()
+    return None, rotulo
+
+
+def nome_fase(rotulo: str, idx: int) -> str:
+    t = re.split(r"[.?]", rotulo or "", maxsplit=1)[0]
+    t = re.sub(r"\s+", " ", t).strip(" -–")
+    palavras = t.split()
+    t = " ".join(palavras[:4])
+    return (t if t else f"Etapa {idx}").strip()
+
+
+def inferir_fases(nos: list[No]) -> None:
+    """Colunas no mesmo padrão da esteira de crédito: um recorte até cada decisão."""
+    idx = 1
+    nome = None
+    usados: list[str] = []
+    for n in nos:
+        if n.tipo == "inicio":
+            continue
+        if nome is None:
+            bruto = nome_fase(n.rotulo, idx)
+            nome = bruto
+            while nome in usados:
+                idx += 1
+                nome = f"{bruto} ({idx})"
+            usados.append(nome)
+            idx += 1
+        n.fase = nome
+        n.obs = [o for o in n.obs if "fase não informada" not in o and "preenchida como Fluxo" not in o]
+        if "fase inferida" not in " ".join(n.obs):
+            n.obs.append("fase inferida da sequência do Word; conferir nome e recorte")
+        if n.tipo == "decisao":
+            nome = None
+    primeira = next((n.fase for n in nos if n.fase), "Etapa 1")
+    for n in nos:
+        if not n.fase:
+            n.fase = primeira
+            n.obs = [o for o in n.obs if "fase não informada" not in o and "preenchida como Fluxo" not in o]
+            if "fase inferida" not in " ".join(n.obs):
+                n.obs.append("fase inferida da sequência do Word; conferir nome e recorte")
+
+
 class No:
     def __init__(self, nid, tipo, rotulo, ator="", **kw):
         self.id = nid
         self.tipo = tipo
-        self.fase = kw.get("fase", "Fluxo")
+        self.fase = kw.get("fase", "")
         self.ator = ator
         self.rotulo = rotulo
         self.descricao = kw.get("descricao", "")
@@ -174,7 +224,7 @@ def extrair_fluxo(path: Path) -> tuple[str, str, list[No]]:
         nos.append(no)
         return no
 
-    inicio = novo("inicio", "Início do processo", obs=["fase não informada no Word; preenchida como Fluxo"])
+    inicio = novo("inicio", "Início do processo", obs=[])
     atual: No | None = inicio
     pendente_decisao: No | None = None
 
@@ -203,23 +253,35 @@ def extrair_fluxo(path: Path) -> tuple[str, str, list[No]]:
             rotulo, ator_bruto = RE_RESP.split(t, 1)
             rotulo = RE_INICIO.sub("", rotulo).strip(" -–")
             ator, obs_ator = limpar_ator(ator_bruto)
-            obs = ["fase não informada no Word; preenchida como Fluxo"]
+            obs = []
             if obs_ator:
                 obs.append(obs_ator)
             if not re.search(r"\sResponsável:", t):
                 obs.append("faltava espaço antes de Responsável")
-            tipo = "decisao" if eh_decisao(rotulo) else "atividade"
-            if tipo == "decisao":
-                obs.append("pergunta e passo no mesmo parágrafo; conferir se a atividade anterior deveria ser separada")
             if RE_FIM.search(rotulo) and not eh_decisao(rotulo):
-                tipo = "fim"
-            no = novo(tipo, rotulo or "Passo sem rótulo", ator, obs=obs)
-            if not rotulo:
-                no.obs.append("rótulo vazio no Word")
+                no = novo("fim", "Fim do processo", ator, obs=obs)
+                atual = no
+                pendente_decisao = None
+                i += 1
+                continue
+            acao, pergunta = separar_decisao(rotulo)
+            if pergunta and acao:
+                atual = novo("atividade", acao, ator, obs=list(obs))
+                no = novo("decisao", pergunta, ator, obs=obs + ["pergunta separada do passo no mesmo parágrafo do Word"])
+                pendente_decisao = no
+                atual = no
+            elif eh_decisao(rotulo):
+                no = novo("decisao", rotulo, ator, obs=obs)
+                atual = no
+                pendente_decisao = no
+            else:
+                no = novo("atividade", rotulo or "Passo sem rótulo", ator, obs=obs)
+                if not rotulo:
+                    no.obs.append("rótulo vazio no Word")
+                atual = no
+                pendente_decisao = None
             if not ator:
                 no.obs.append("ator não informado no Word")
-            atual = no
-            pendente_decisao = no if tipo == "decisao" else None
             i += 1
             continue
 
@@ -243,6 +305,7 @@ def extrair_fluxo(path: Path) -> tuple[str, str, list[No]]:
              obs=["fim não explícito no Word; nó criado na extração"])
 
     ligar(nos)
+    inferir_fases(nos)
     return fid, nome, nos
 
 
@@ -364,8 +427,6 @@ def main():
     for path in sorted(PASTA.glob("*.docx")):
         fid, nome, nos = extrair_fluxo(path)
         for n in nos:
-            if n.tipo != "inicio" and not n.fase:
-                n.fase = "Fluxo"
             linhas.append(n.linha(fid, nome))
         print(f"OK {path.name}: {len(nos)} nós ({fid})")
 
