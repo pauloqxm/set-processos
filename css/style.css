@@ -707,7 +707,7 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
   color: #fff; font-weight: 800; font-size: 0.72rem; letter-spacing: .04em;
   border-radius: 8px; padding: 8px 10px; min-width: 74px; text-align: center;
 }
-.risco-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+.risco-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 14px; }
 .risco-card {
   display: flex; flex-direction: column; gap: 8px; text-align: left; width: 100%;
   background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--forte);
