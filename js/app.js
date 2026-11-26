@@ -895,21 +895,25 @@
 
   function htmlFiltrosRisco() {
     const donos = [...new Set(estado.riscos.map((r) => r.dono))].sort((a, b) => ordemDono(a) - ordemDono(b));
-    const preferencia = ["mitigar", "evitar"];
-    const estrategias = [...new Map(estado.riscos.map((r) => [r.estrategia.id, r.estrategia.rotulo])).entries()]
-      .sort((a, b) => (preferencia.indexOf(a[0]) + 1 || 9) - (preferencia.indexOf(b[0]) + 1 || 9));
     const f = estado.riscoFiltros;
     const chipsDono = donos.map((d) => {
       const info = infoDono(d);
       return `<button type="button" class="filtro${f.dono === d ? " ativo" : ""}" data-dono="${esc(d)}"><span class="dot" style="background:${info.forte}"></span>${esc(info.sigla)}</button>`;
     }).join("");
-    const chipsEst = estrategias.map(([id, rotulo]) =>
-      `<button type="button" class="filtro${f.estrategia === id ? " ativo" : ""}" data-estrategia="${esc(id)}">${esc(rotulo)}</button>`
-    ).join("");
     const limpar = (f.dono || f.estrategia || f.celula || f.busca)
       ? `<button type="button" class="filtro" data-limpar="1">${icone("x")} Limpar</button>`
       : "";
-    return chipsDono + chipsEst + limpar;
+    return chipsDono + limpar;
+  }
+
+  function htmlEstrategiasRisco() {
+    const preferencia = ["mitigar", "evitar"];
+    const estrategias = [...new Map(estado.riscos.map((r) => [r.estrategia.id, r.estrategia.rotulo])).entries()]
+      .sort((a, b) => (preferencia.indexOf(a[0]) + 1 || 9) - (preferencia.indexOf(b[0]) + 1 || 9));
+    const f = estado.riscoFiltros;
+    return estrategias.map(([id, rotulo]) =>
+      `<button type="button" class="filtro filtro-${esc(id)}${f.estrategia === id ? " ativo" : ""}" data-estrategia="${esc(id)}">${esc(rotulo)}</button>`
+    ).join("");
   }
 
   function htmlListaRisco() {
@@ -926,11 +930,11 @@
       const info = infoDono(dono);
       const itens = grupos.get(dono);
       const titulo = info.nome && info.nome !== info.sigla ? info.nome : "";
-      return `<section class="risco-grupo">
-        <header class="risco-grupo-head">
-          <span class="risco-dono" style="background:${info.forte}">${esc(info.sigla)}</span>
+      return `<section class="coord-painel" style="--forte:${info.forte};--clara:${info.clara}">
+        <header class="coord-painel-head">
+          <span class="coord-sigla">${esc(info.sigla)}</span>
           <div>
-            ${titulo ? `<h3>${esc(titulo)}</h3>` : ""}
+            ${titulo ? `<h3>${esc(titulo)}</h3>` : `<h3>${esc(info.sigla)}</h3>`}
             <p class="apoio">${plural(itens.length, "risco", "riscos")}</p>
           </div>
         </header>
@@ -956,13 +960,15 @@
   function sincronizarRiscos() {
     const matriz = $("#risco-matriz");
     const filtros = $("#risco-filtros");
+    const estrategias = $("#risco-estrategias");
     const lista = $("#risco-lista");
-    if (!matriz || !filtros || !lista) return;
+    if (!matriz || !filtros || !estrategias || !lista) return;
     const busca = $("#risco-busca");
     const foco = document.activeElement === busca;
     const pos = foco ? busca.selectionStart : 0;
     matriz.innerHTML = htmlMatriz();
     filtros.innerHTML = htmlFiltrosRisco();
+    estrategias.innerHTML = htmlEstrategiasRisco();
     lista.innerHTML = htmlListaRisco();
     ligarRecorteRisco();
     if (foco && busca) {
@@ -980,7 +986,7 @@
       estado.riscoFiltros.dono = estado.riscoFiltros.dono === b.dataset.dono ? null : b.dataset.dono;
       sincronizarRiscos();
     }));
-    $$("#risco-filtros [data-estrategia]").forEach((b) => b.addEventListener("click", () => {
+    $$("#risco-estrategias [data-estrategia]").forEach((b) => b.addEventListener("click", () => {
       estado.riscoFiltros.estrategia = estado.riscoFiltros.estrategia === b.dataset.estrategia ? null : b.dataset.estrategia;
       sincronizarRiscos();
     }));
@@ -1040,19 +1046,26 @@
         </div>
       </div>
       ${htmlKpisRisco()}
-      <section class="riscos-corpo">
-        <div class="painel">
-          <h2 class="painel-titulo">Probabilidade × impacto</h2>
-          <p class="apoio">Clique numa célula para ver só esses riscos. Clique de novo para limpar.</p>
-          <div id="risco-matriz">${htmlMatriz()}</div>
-        </div>
+      <section class="riscos-pagina">
         <div class="riscos-lista-col">
-          <div class="filtros" id="risco-filtros">${htmlFiltrosRisco()}</div>
-          <label class="busca riscos-busca" for="risco-busca">
-            ${icone("search")}
-            <input id="risco-busca" type="search" placeholder="Busque por processo, risco ou consequência" value="${esc(estado.riscoFiltros.busca)}" autocomplete="off" />
-          </label>
+          <div class="riscos-ferramentas">
+            <div class="filtros" id="risco-filtros">${htmlFiltrosRisco()}</div>
+            <label class="busca riscos-busca" for="risco-busca">
+              ${icone("search")}
+              <input id="risco-busca" type="search" placeholder="Busque por processo, risco ou consequência" value="${esc(estado.riscoFiltros.busca)}" autocomplete="off" />
+            </label>
+          </div>
           <div id="risco-lista">${htmlListaRisco()}</div>
+        </div>
+        <div class="painel">
+          <div class="riscos-matriz-topo">
+            <div>
+              <h2 class="painel-titulo">Probabilidade × impacto</h2>
+              <p class="apoio">Clique numa célula para ver só esses riscos. Clique de novo para limpar.</p>
+            </div>
+            <div class="filtros" id="risco-estrategias">${htmlEstrategiasRisco()}</div>
+          </div>
+          <div id="risco-matriz">${htmlMatriz()}</div>
         </div>
       </section>`;
     montarTela("riscos", html, "Riscos");
