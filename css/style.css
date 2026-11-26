@@ -651,30 +651,17 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
 /* ---------- Riscos ---------- */
 .riscos-head { margin-bottom: 0; }
 .riscos-head h2 { margin: 2px 0 4px; font-size: 1.35rem; font-weight: 800; }
-.riscos-pagina { display: flex; flex-direction: column; gap: 18px; margin-top: 18px; }
-.riscos-ferramentas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.riscos-ferramentas .busca { flex: 1; min-width: min(100%, 280px); }
-.riscos-matriz-topo { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
-.riscos-matriz-topo .painel-titulo { margin-bottom: 4px; }
-.filtro-mitigar.ativo { background: var(--blue-soft); border-color: var(--blue); color: var(--blue); }
-.filtro-evitar.ativo { background: #fde8d8; border-color: #9a3412; color: #9a3412; }
-.coord-painel {
-  background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
-  box-shadow: var(--shadow);
+.riscos-corpo {
+  display: grid; grid-template-columns: minmax(280px, 460px) minmax(0, 1fr);
+  gap: 16px; align-items: start; margin-top: 18px;
 }
-.coord-painel + .coord-painel { margin-top: 14px; }
-.coord-painel-head {
-  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
-  background: color-mix(in srgb, var(--forte) 14%, #fff);
-  border-bottom: 3px solid var(--forte);
+.riscos-matriz-col { display: flex; flex-direction: column; gap: 12px; }
+.filtros-donos { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.filtro-dono {
+  flex-direction: column; justify-content: center; min-height: 76px;
+  padding: 10px 6px; border-radius: 12px; font-size: 0.82rem; gap: 8px;
 }
-.coord-painel-head h3 { margin: 0; font-size: 1rem; font-weight: 800; }
-.coord-painel-head .apoio { margin: 0; }
-.coord-sigla {
-  color: #fff; background: var(--forte); font-weight: 800; font-size: 0.78rem; letter-spacing: .04em;
-  border-radius: 8px; padding: 8px 12px; min-width: 78px; text-align: center;
-}
-.coord-painel .risco-cards { padding: 14px; }
+.filtro-dono .dot { width: 18px; height: 18px; }
 .riscos-lista-col { display: flex; flex-direction: column; gap: 12px; }
 .riscos-busca { background: #fff; border: 1px solid var(--line); }
 .matriz {
