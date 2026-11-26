@@ -255,9 +255,87 @@ window.DADOS = (function () {
     throw new Error("Esteira indisponível");
   }
 
+  function semAcento(t) {
+    return limpar(t).normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+  }
+
+  function nivelDe(txt) {
+    const n = semAcento(txt);
+    if (n.startsWith("alt")) return { id: "alto", rotulo: "Alto", peso: 3 };
+    if (n.startsWith("med")) return { id: "medio", rotulo: "Médio", peso: 2 };
+    if (n.startsWith("baix")) return { id: "baixo", rotulo: "Baixo", peso: 1 };
+    return { id: "medio", rotulo: limpar(txt) || "—", peso: 2 };
+  }
+
+  function estrategiaDe(txt) {
+    const n = semAcento(txt);
+    if (n.startsWith("evit")) return { id: "evitar", rotulo: "Evitar" };
+    if (n.startsWith("mitig")) return { id: "mitigar", rotulo: "Mitigar" };
+    const rotulo = limpar(txt);
+    return { id: n || "outra", rotulo: rotulo || "—" };
+  }
+
+  function montarRiscos(linhas) {
+    const header = (linhas[0] || []).map((h) => semAcento(h));
+    const col = (...nomes) => header.findIndex((h) => nomes.some((n) => h.includes(n)));
+    const iDono = col("dono");
+    const iProc = header.findIndex((h) => h.includes("processo") && !h.includes("dono"));
+    const iRisco = header.findIndex((h) => h === "risco");
+    const iDesc = col("descricao");
+    const iCons = col("consequencia");
+    const iProb = col("probabilidade");
+    const iImp = col("impacto");
+    const iPlano = col("contingencia", "plano");
+    const iEst = col("estrategia");
+    if (iDono < 0 || iRisco < 0) return [];
+    const lista = [];
+    linhas.slice(1).forEach((l, i) => {
+      const dono = limpar(l[iDono]).toUpperCase();
+      const risco = limpar(l[iRisco]);
+      if (!dono || !risco) return;
+      const probabilidade = nivelDe(l[iProb]);
+      const impacto = nivelDe(l[iImp]);
+      const estrategia = estrategiaDe(l[iEst]);
+      lista.push({
+        id: "r" + (i + 1),
+        dono,
+        processo: limpar(l[iProc]),
+        risco,
+        descricao: limpar(l[iDesc]),
+        consequencia: limpar(l[iCons]),
+        probabilidade,
+        impacto,
+        nivel: probabilidade.peso * impacto.peso,
+        plano: limpar(l[iPlano]),
+        estrategia,
+        busca: semAcento([dono, l[iProc], risco, l[iDesc], l[iCons], l[iPlano], estrategia.rotulo].join(" ")),
+      });
+    });
+    return lista;
+  }
+
+  async function carregarRiscos() {
+    const tentativas = [];
+    if (C.RISCOS_CSV_URL && /gid=\d+/.test(C.RISCOS_CSV_URL)) tentativas.push(["ao-vivo", C.RISCOS_CSV_URL]);
+    if (C.RISCOS_CSV_LOCAL) tentativas.push(["local", C.RISCOS_CSV_LOCAL]);
+    for (const [fonte, url] of tentativas) {
+      try {
+        const csv = await buscarTexto(url);
+        if (!/dono do processo/i.test(csv.slice(0, 400))) continue;
+        try { localStorage.setItem(C.RISCOS_CACHE_KEY, JSON.stringify({ ts: Date.now(), csv })); } catch (e) {}
+        return { riscos: montarRiscos(parseCsv(csv)), fonte, atualizadoEm: new Date() };
+      } catch (e) { /* próxima fonte */ }
+    }
+    try {
+      const cache = JSON.parse(localStorage.getItem(C.RISCOS_CACHE_KEY) || "null");
+      if (cache && cache.csv) return { riscos: montarRiscos(parseCsv(cache.csv)), fonte: "cache", atualizadoEm: new Date(cache.ts) };
+    } catch (e) {}
+    throw new Error("Riscos indisponíveis");
+  }
+
   function normalizarBusca(t) {
     return String(t).toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
   }
 
-  return { carregar, carregarEsteira, normalizarBusca, formatarNome };
+  return { carregar, carregarEsteira, carregarRiscos, normalizarBusca, formatarNome };
 })();

@@ -20,6 +20,7 @@
     cart: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
     sprout: '<path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/>',
     megaphone: '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+    shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v4M12 16h.01"/>',
     newspaper: '<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6z"/>',
     landmark: '<path d="M3 22h18M6 18v-7M10 18v-7M14 18v-7M18 18v-7M12 2l8 5H4z"/>',
     car: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
@@ -123,6 +124,8 @@
     passoAberto: null,
     fluxos: [],
     fluxo: null,
+    riscos: [],
+    riscoFiltros: { dono: null, estrategia: null, celula: null, busca: "" },
     jogo: [],
     jogando: false,
     usuario: null,
@@ -145,6 +148,7 @@
       ["#/", "home", "Início", rota === "home"],
       ["#/estantes", "layers", "Estantes", rota === "estantes" || rota === "estante" || rota === "processo"],
       ["#/esteira", "route", "Esteira", rota === "esteira"],
+      ["#/riscos", "shield", "Riscos", rota === "riscos"],
       ["#/legenda", "palette", "Legenda", rota === "legenda"],
     ];
     const perfil = estado.usuario && estado.usuario.profile;
@@ -166,6 +170,7 @@
     if (rota === "estante" && CAT[arg]) return telaEstante(CAT[arg]);
     if (rota === "estantes") return telaEstantes();
     if (rota === "esteira") return arg ? telaEsteira(arg) : telaListaEsteiras();
+    if (rota === "riscos") return telaRiscos();
     if (rota === "legenda") return telaLegenda(UNID[arg] ? arg : null);
     return telaInicio();
   }
@@ -733,10 +738,252 @@
   document.addEventListener("keydown", (ev) => {
     if (!gaveta.classList.contains("aberta")) return;
     if (ev.key === "Escape") fecharGaveta();
+    if (!estado.proc || !estado.passoAberto) return;
     const o = estado.passoAberto;
     if (ev.key === "ArrowRight" && o < estado.proc.passos.length) abrirPasso(o + 1);
     if (ev.key === "ArrowLeft" && o > 1) abrirPasso(o - 1);
   });
+
+  /* ---------- Tela: Riscos ---------- */
+  const ORDEM_DONOS = ["COTRA", "COEMP", "COESA", "COAFI"];
+  const NIVEIS = { baixo: 1, medio: 2, alto: 3 };
+  const ROTULO_PROB = { alto: "Alta", medio: "Média", baixo: "Baixa" };
+  const ROTULO_IMP = { alto: "Alto", medio: "Médio", baixo: "Baixo" };
+
+  function infoDono(sigla) {
+    const chave = String(sigla || "").toUpperCase();
+    const u = C.UNIDADES.find((x) => x.sigla.toUpperCase() === chave);
+    if (u) return u;
+    if (chave === "COESA") return { sigla: "COESA", nome: "COESA", forte: "#8b5cf6", clara: "#ede9fe" };
+    return { sigla: chave || "—", nome: chave || "—", forte: "#7e7e7e", clara: "#ececec" };
+  }
+
+  function ordemDono(sigla) {
+    const i = ORDEM_DONOS.indexOf(sigla);
+    return i < 0 ? 99 : i;
+  }
+
+  function faixaDe(nivel) {
+    if (nivel >= 9) return { id: "critico", rotulo: "Crítico" };
+    if (nivel >= 6) return { id: "atencao", rotulo: "Atenção" };
+    if (nivel >= 3) return { id: "moderado", rotulo: "Moderado" };
+    return { id: "baixo", rotulo: "Baixo" };
+  }
+
+  function riscosRecorte(comCelula) {
+    const f = estado.riscoFiltros;
+    const termos = DADOS.normalizarBusca(f.busca).split(/\s+/).filter(Boolean);
+    return estado.riscos.filter((r) => {
+      if (f.dono && r.dono !== f.dono) return false;
+      if (f.estrategia && r.estrategia.id !== f.estrategia) return false;
+      if (comCelula && f.celula && f.celula !== `${r.probabilidade.id}|${r.impacto.id}`) return false;
+      return !termos.length || termos.every((t) => r.busca.includes(t));
+    });
+  }
+
+  function htmlKpisRisco() {
+    const R = estado.riscos;
+    const criticos = R.filter((r) => r.nivel >= 9).length;
+    const atencao = R.filter((r) => r.nivel === 6).length;
+    const evitar = R.filter((r) => r.estrategia.id === "evitar").length;
+    const donos = new Set(R.map((r) => r.dono)).size;
+    return `<section class="kpis">
+      <div class="kpi tom-blue"><div class="kpi-top">${icone("shield")} Riscos</div><div class="kpi-body"><div class="kpi-valor">${R.length}</div><div class="kpi-apoio">Processos críticos acompanhados</div></div><div class="kpi-foot">${plural(donos, "coordenadoria", "coordenadorias")}</div></div>
+      <div class="kpi tom-danger"><div class="kpi-top">${icone("shield")} Críticos</div><div class="kpi-body"><div class="kpi-valor">${criticos}</div><div class="kpi-apoio">Probabilidade alta e impacto alto</div></div><div class="kpi-foot">Prioridade imediata</div></div>
+      <div class="kpi tom-orange"><div class="kpi-top">${icone("shield")} Em atenção</div><div class="kpi-body"><div class="kpi-valor">${atencao}</div><div class="kpi-apoio">Um eixo alto e o outro médio</div></div><div class="kpi-foot">Acompanhar de perto</div></div>
+      <div class="kpi tom-teal"><div class="kpi-top">${icone("shield")} Evitar</div><div class="kpi-body"><div class="kpi-valor">${evitar}</div><div class="kpi-apoio">${R.length - evitar} com estratégia de mitigar</div></div><div class="kpi-foot">Estratégia de resposta</div></div>
+    </section>`;
+  }
+
+  function htmlMatriz() {
+    const base = riscosRecorte(false);
+    const probs = ["alto", "medio", "baixo"];
+    const imps = ["baixo", "medio", "alto"];
+    const cabeca = imps.map((i) => `<span class="matriz-eixo">Impacto ${ROTULO_IMP[i]}</span>`).join("");
+    const linhas = probs.map((p) => {
+      const celulas = imps.map((i) => {
+        const n = base.filter((r) => r.probabilidade.id === p && r.impacto.id === i).length;
+        const chave = `${p}|${i}`;
+        const ativa = estado.riscoFiltros.celula === chave;
+        const faixa = faixaDe(NIVEIS[p] * NIVEIS[i]).id;
+        return `<button type="button" class="matriz-celula faixa-${faixa}${ativa ? " ativa" : ""}${n ? "" : " vazia"}" data-celula="${chave}" aria-pressed="${ativa}">
+          <strong>${n}</strong><small>${n === 1 ? "risco" : "riscos"}</small>
+        </button>`;
+      }).join("");
+      return `<span class="matriz-eixo">Prob. ${ROTULO_PROB[p]}</span>${celulas}`;
+    }).join("");
+    return `<div class="matriz" role="grid" aria-label="Matriz de probabilidade e impacto"><span class="matriz-canto">Probabilidade ↓<br/>Impacto →</span>${cabeca}${linhas}</div>`;
+  }
+
+  function htmlFiltrosRisco() {
+    const donos = [...new Set(estado.riscos.map((r) => r.dono))].sort((a, b) => ordemDono(a) - ordemDono(b));
+    const preferencia = ["mitigar", "evitar"];
+    const estrategias = [...new Map(estado.riscos.map((r) => [r.estrategia.id, r.estrategia.rotulo])).entries()]
+      .sort((a, b) => (preferencia.indexOf(a[0]) + 1 || 9) - (preferencia.indexOf(b[0]) + 1 || 9));
+    const f = estado.riscoFiltros;
+    const chipsDono = donos.map((d) => {
+      const info = infoDono(d);
+      return `<button type="button" class="filtro${f.dono === d ? " ativo" : ""}" data-dono="${esc(d)}"><span class="dot" style="background:${info.forte}"></span>${esc(info.sigla)}</button>`;
+    }).join("");
+    const chipsEst = estrategias.map(([id, rotulo]) =>
+      `<button type="button" class="filtro${f.estrategia === id ? " ativo" : ""}" data-estrategia="${esc(id)}">${esc(rotulo)}</button>`
+    ).join("");
+    const limpar = (f.dono || f.estrategia || f.celula || f.busca)
+      ? `<button type="button" class="filtro" data-limpar="1">${icone("x")} Limpar</button>`
+      : "";
+    return chipsDono + chipsEst + limpar;
+  }
+
+  function htmlListaRisco() {
+    const lista = riscosRecorte(true);
+    if (!lista.length) {
+      return `<div class="painel vazio">${icone("search")}<p>Nenhum risco com esses filtros.</p></div>`;
+    }
+    const grupos = new Map();
+    lista.forEach((r) => {
+      if (!grupos.has(r.dono)) grupos.set(r.dono, []);
+      grupos.get(r.dono).push(r);
+    });
+    return [...grupos.keys()].sort((a, b) => ordemDono(a) - ordemDono(b)).map((dono) => {
+      const info = infoDono(dono);
+      const itens = grupos.get(dono);
+      const titulo = info.nome && info.nome !== info.sigla ? info.nome : "";
+      return `<section class="risco-grupo">
+        <header class="risco-grupo-head">
+          <span class="risco-dono" style="background:${info.forte}">${esc(info.sigla)}</span>
+          <div>
+            ${titulo ? `<h3>${esc(titulo)}</h3>` : ""}
+            <p class="apoio">${plural(itens.length, "risco", "riscos")}</p>
+          </div>
+        </header>
+        <div class="risco-cards">${itens.map(cartaoRisco).join("")}</div>
+      </section>`;
+    }).join("");
+  }
+
+  function cartaoRisco(r) {
+    const info = infoDono(r.dono);
+    return `<button type="button" class="risco-card" data-risco="${esc(r.id)}" style="--forte:${info.forte}">
+      <span class="risco-processo">${esc(r.processo)}</span>
+      <h3>${esc(r.risco)}</h3>
+      <div class="meta">
+        <span class="chip selo-${r.probabilidade.id}">Prob. ${esc(ROTULO_PROB[r.probabilidade.id])}</span>
+        <span class="chip selo-${r.impacto.id}">Impacto ${esc(ROTULO_IMP[r.impacto.id])}</span>
+        <span class="chip selo-${r.estrategia.id}">${esc(r.estrategia.rotulo)}</span>
+      </div>
+      <p class="risco-consequencia">${esc(r.consequencia)}</p>
+    </button>`;
+  }
+
+  function sincronizarRiscos() {
+    const matriz = $("#risco-matriz");
+    const filtros = $("#risco-filtros");
+    const lista = $("#risco-lista");
+    if (!matriz || !filtros || !lista) return;
+    const busca = $("#risco-busca");
+    const foco = document.activeElement === busca;
+    const pos = foco ? busca.selectionStart : 0;
+    matriz.innerHTML = htmlMatriz();
+    filtros.innerHTML = htmlFiltrosRisco();
+    lista.innerHTML = htmlListaRisco();
+    ligarRecorteRisco();
+    if (foco && busca) {
+      busca.focus();
+      if (typeof pos === "number") busca.setSelectionRange(pos, pos);
+    }
+  }
+
+  function ligarRecorteRisco() {
+    $$("#risco-matriz [data-celula]").forEach((b) => b.addEventListener("click", () => {
+      estado.riscoFiltros.celula = estado.riscoFiltros.celula === b.dataset.celula ? null : b.dataset.celula;
+      sincronizarRiscos();
+    }));
+    $$("#risco-filtros [data-dono]").forEach((b) => b.addEventListener("click", () => {
+      estado.riscoFiltros.dono = estado.riscoFiltros.dono === b.dataset.dono ? null : b.dataset.dono;
+      sincronizarRiscos();
+    }));
+    $$("#risco-filtros [data-estrategia]").forEach((b) => b.addEventListener("click", () => {
+      estado.riscoFiltros.estrategia = estado.riscoFiltros.estrategia === b.dataset.estrategia ? null : b.dataset.estrategia;
+      sincronizarRiscos();
+    }));
+    const limpar = $("#risco-filtros [data-limpar]");
+    if (limpar) limpar.addEventListener("click", () => {
+      estado.riscoFiltros = { dono: null, estrategia: null, celula: null, busca: "" };
+      const busca = $("#risco-busca");
+      if (busca) busca.value = "";
+      sincronizarRiscos();
+    });
+    $$("#risco-lista [data-risco]").forEach((b) => b.addEventListener("click", () => abrirRisco(b.dataset.risco)));
+  }
+
+  function abrirRisco(id) {
+    const r = estado.riscos.find((x) => x.id === id);
+    if (!r) return;
+    const info = infoDono(r.dono);
+    const faixa = faixaDe(r.nivel);
+    estado.passoAberto = null;
+    gaveta.innerHTML = `
+      <div class="gaveta-topo" style="--forte:${info.forte}">
+        <span class="eyebrow">${esc(info.sigla)}${info.nome !== info.sigla ? ` · ${esc(info.nome)}` : ""}</span>
+        <h3 id="gaveta-titulo">${esc(r.risco)}</h3>
+        <button class="fechar" id="fechar" aria-label="Fechar">${icone("x")}</button>
+      </div>
+      <div class="gaveta-corpo">
+        <p class="risco-processo">${esc(r.processo)}</p>
+        <div class="proc-meta">
+          <span class="chip selo-${r.probabilidade.id}">Probabilidade ${esc(ROTULO_PROB[r.probabilidade.id])}</span>
+          <span class="chip selo-${r.impacto.id}">Impacto ${esc(ROTULO_IMP[r.impacto.id])}</span>
+          <span class="chip selo-${r.estrategia.id}">${esc(r.estrategia.rotulo)}</span>
+          <span class="chip selo-${faixa.id}">${esc(faixa.rotulo)}</span>
+        </div>
+        ${r.descricao ? `<div><h4>O que está em jogo</h4><p class="descricao">${esc(r.descricao)}</p></div>` : ""}
+        ${r.consequencia ? `<div><h4>Consequência</h4><p class="descricao">${esc(r.consequencia)}</p></div>` : ""}
+        ${r.plano ? `<div><h4>Plano de contingência</h4><p class="descricao">${esc(r.plano)}</p></div>` : ""}
+      </div>`;
+    gaveta.classList.add("aberta");
+    gaveta.setAttribute("aria-hidden", "false");
+    veu.classList.add("aberto");
+    $("#fechar").addEventListener("click", () => fecharGaveta());
+    $("#fechar").focus({ preventScroll: true });
+  }
+
+  function telaRiscos() {
+    if (!estado.riscos.length) {
+      montarTela("riscos", `<div class="painel vazio">${icone("shield")}<p><strong>Nenhum risco carregado.</strong><br/>A planilha de riscos não pôde ser lida agora.</p></div>`, "Riscos");
+      return;
+    }
+    const html = `
+      <div class="migalhas"><a href="#/">Início</a> › <span>Riscos</span></div>
+      <div class="secao-head riscos-head">
+        <div>
+          <span class="eyebrow">${icone("shield")} Monitoramento</span>
+          <h2>Riscos dos processos críticos</h2>
+          <p class="apoio">Probabilidade, impacto e a resposta prevista para cada coordenadoria.</p>
+        </div>
+      </div>
+      ${htmlKpisRisco()}
+      <section class="riscos-corpo">
+        <div class="painel">
+          <h2 class="painel-titulo">Probabilidade × impacto</h2>
+          <p class="apoio">Clique numa célula para ver só esses riscos. Clique de novo para limpar.</p>
+          <div id="risco-matriz">${htmlMatriz()}</div>
+        </div>
+        <div class="riscos-lista-col">
+          <div class="filtros" id="risco-filtros">${htmlFiltrosRisco()}</div>
+          <label class="busca riscos-busca" for="risco-busca">
+            ${icone("search")}
+            <input id="risco-busca" type="search" placeholder="Busque por processo, risco ou consequência" value="${esc(estado.riscoFiltros.busca)}" autocomplete="off" />
+          </label>
+          <div id="risco-lista">${htmlListaRisco()}</div>
+        </div>
+      </section>`;
+    montarTela("riscos", html, "Riscos");
+    ligarRecorteRisco();
+    $("#risco-busca").addEventListener("input", (ev) => {
+      estado.riscoFiltros.busca = ev.target.value;
+      sincronizarRiscos();
+    });
+  }
 
   /* ---------- Tela: Legenda ---------- */
   function corAtor(nome) {
@@ -1149,12 +1396,19 @@
       estado.porId = new Map(r.processos.map((p) => [p.id, p]));
       estado.fonte = r.fonte;
       estado.atualizadoEm = r.atualizadoEm;
-      try {
-        const e = await DADOS.carregarEsteira();
-        estado.fluxos = e.fluxos;
-      } catch (err) {
-        console.warn("Esteira indisponível:", err);
+      const [esteira, riscos] = await Promise.allSettled([
+        DADOS.carregarEsteira(),
+        DADOS.carregarRiscos(),
+      ]);
+      if (esteira.status === "fulfilled") estado.fluxos = esteira.value.fluxos;
+      else {
+        console.warn("Esteira indisponível:", esteira.reason);
         estado.fluxos = [];
+      }
+      if (riscos.status === "fulfilled") estado.riscos = riscos.value.riscos;
+      else {
+        console.warn("Riscos indisponíveis:", riscos.reason);
+        estado.riscos = [];
       }
       renderFonte();
       rotear();
