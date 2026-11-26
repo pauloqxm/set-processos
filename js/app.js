@@ -30,6 +30,7 @@
     x: '<path d="M18 6 6 18M6 6l12 12"/>',
     left: '<path d="m15 18-6-6 6-6"/>',
     right: '<path d="m9 18 6-6-6-6"/>',
+    chevron: '<path d="m6 9 6 6 6-6"/>',
     monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
     clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/>',
     book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
@@ -144,23 +145,46 @@
 
   /* ---------- Navegação ---------- */
   function renderNav(rota) {
-    const itens = [
-      ["#/", "home", "Início", rota === "home"],
-      ["#/estantes", "layers", "Estantes", rota === "estantes" || rota === "estante" || rota === "processo"],
+    const processosAtivo = ["processos", "estantes", "estante", "processo", "esteira", "legenda"].includes(rota);
+    const menu = [
+      ["#/estantes", "layers", "Estante", rota === "estantes" || rota === "estante" || rota === "processo"],
       ["#/esteira", "route", "Esteira", rota === "esteira"],
-      ["#/riscos", "shield", "Riscos", rota === "riscos"],
       ["#/legenda", "palette", "Legenda", rota === "legenda"],
     ];
     const perfil = estado.usuario && estado.usuario.profile;
     const nome = perfil && (perfil.name || perfil.email || "");
-    $("#nav").innerHTML = itens
-      .map(([h, i, t, a]) => `<a href="${h}" class="${a ? "ativo" : ""}">${icone(i)}<span>${t}</span></a>`)
-      .join("") +
-      (nome ? `<span class="nav-user" title="${esc(perfil.email || nome)}">${esc(nome.split(" ")[0])}</span>` : "") +
-      `<button type="button" class="nav-sair" id="nav-sair">${icone("logout")}<span>Sair</span></button>`;
+    $("#nav").innerHTML = `
+      <a href="#/" class="${rota === "home" ? "ativo" : ""}">${icone("home")}<span>Início</span></a>
+      <div class="nav-drop ${processosAtivo ? "ativo" : ""}">
+        <a href="#/processos" class="${processosAtivo ? "ativo" : ""}">${icone("layers")}<span>Processos</span></a>
+        <button type="button" class="nav-drop-toggle" aria-label="Abrir menu de Processos" aria-expanded="false" aria-haspopup="true">${icone("chevron")}</button>
+        <div class="nav-menu" role="menu">
+          ${menu.map(([h, i, t, a]) => `<a href="${h}" role="menuitem" class="${a ? "ativo" : ""}">${icone(i)}<span>${t}</span></a>`).join("")}
+        </div>
+      </div>
+      <a href="#/riscos" class="${rota === "riscos" ? "ativo" : ""}">${icone("shield")}<span>Riscos</span></a>
+      ${nome ? `<span class="nav-user" title="${esc(perfil.email || nome)}">${esc(nome.split(" ")[0])}</span>` : ""}
+      <button type="button" class="nav-sair" id="nav-sair">${icone("logout")}<span>Sair</span></button>`;
     const sair = $("#nav-sair");
     if (sair) sair.addEventListener("click", () => SSO.sair());
+    const drop = $(".nav-drop");
+    const toggle = $(".nav-drop-toggle");
+    if (toggle && drop) {
+      toggle.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const aberto = drop.classList.toggle("aberto");
+        toggle.setAttribute("aria-expanded", aberto ? "true" : "false");
+      });
+    }
   }
+
+  document.addEventListener("click", () => {
+    const drop = $(".nav-drop");
+    const toggle = $(".nav-drop-toggle");
+    if (!drop) return;
+    drop.classList.remove("aberto");
+    if (toggle) toggle.setAttribute("aria-expanded", "false");
+  });
 
   function rotear() {
     fecharGaveta(true);
@@ -172,7 +196,8 @@
     if (rota === "esteira") return arg ? telaEsteira(arg) : telaListaEsteiras();
     if (rota === "riscos") return telaRiscos();
     if (rota === "legenda") return telaLegenda(UNID[arg] ? arg : null);
-    return telaInicio();
+    if (rota === "processos") return telaInicio();
+    return telaPortal();
   }
 
   function montarTela(rota, html, titulo, manterScroll) {
@@ -241,7 +266,42 @@
     return C.CATEGORIAS.filter((c) => processosDaCategoria(c.id).length);
   }
 
-  /* ---------- Tela: Início ---------- */
+  /* ---------- Tela: Portal ---------- */
+  function telaPortal() {
+    const processos = estado.processos.length;
+    const riscos = estado.riscos.length;
+    const html = `
+      <section class="portal">
+        <div class="portal-intro">
+          <span class="eyebrow">SET / IDT · Secretaria do Trabalho</span>
+          <h2>Por onde você quer começar?</h2>
+          <p>O catálogo reúne o passo a passo dos macrofluxos. A área de riscos acompanha probabilidade, impacto e a resposta de cada processo crítico.</p>
+        </div>
+        <div class="portal-cards">
+          <a class="portal-card" href="#/processos">
+            <img src="assets/svg/catalogo.svg" alt="" width="480" height="320" />
+            <div class="portal-card-corpo">
+              <span class="eyebrow">Macrofluxos</span>
+              <h3>Catálogo de Processos</h3>
+              <p>Estantes, esteiras e a legenda de quem faz cada etapa.</p>
+              <span class="portal-card-meta">${processos ? plural(processos, "processo mapeado", "processos mapeados") : "Abrir o catálogo"}</span>
+            </div>
+          </a>
+          <a class="portal-card portal-card-risco" href="#/riscos">
+            <img src="assets/svg/riscos.svg" alt="" width="480" height="320" />
+            <div class="portal-card-corpo">
+              <span class="eyebrow">Monitoramento</span>
+              <h3>Riscos</h3>
+              <p>Matriz de probabilidade e impacto, com o plano de cada coordenadoria.</p>
+              <span class="portal-card-meta">${riscos ? plural(riscos, "risco acompanhado", "riscos acompanhados") : "Abrir o monitoramento"}</span>
+            </div>
+          </a>
+        </div>
+      </section>`;
+    montarTela("home", html, "Início");
+  }
+
+  /* ---------- Tela: Catálogo ---------- */
   function telaInicio() {
     const P = estado.processos;
     const passos = P.reduce((t, p) => t + p.passos.length, 0);
@@ -291,7 +351,7 @@
         <div class="processos">${estado.fluxos.slice(0, 6).map(cartaoFluxo).join("")}</div>
       </section>` : ""}`;
 
-    montarTela("home", html, "");
+    montarTela("processos", html, "Processos");
     const input = $("#busca");
     let t;
     input.addEventListener("input", () => { clearTimeout(t); t = setTimeout(() => buscar(input.value), 140); });

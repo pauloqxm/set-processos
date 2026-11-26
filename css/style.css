@@ -72,15 +72,50 @@ img { max-width: 100%; }
   font-size: clamp(0.78rem, 1.7vw, 1.05rem);
   text-transform: uppercase; letter-spacing: 0.06em;
 }
-.nav { display: flex; gap: 6px; }
-.nav a {
+.nav { display: flex; gap: 6px; align-items: center; }
+.nav a, .nav-drop-toggle {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 12px; border-radius: 8px;
   font-weight: 700; font-size: 0.78rem; text-decoration: none;
   color: var(--ink); border: 1px solid transparent;
+  background: transparent; cursor: pointer; font-family: inherit;
   transition: color .15s, background .15s, border-color .15s;
 }
-.nav a:hover, .nav a.ativo { color: var(--menu-accent); background: var(--orange-soft); border-color: #f8d3bd; }
+.nav a:hover, .nav a.ativo, .nav-drop.ativo > a, .nav-drop-toggle:hover { color: var(--menu-accent); background: var(--orange-soft); border-color: #f8d3bd; }
+.nav-drop { position: relative; display: inline-flex; align-items: stretch; }
+.nav-drop > a { border-radius: 8px 0 0 8px; padding-right: 8px; }
+.nav-drop-toggle { border-radius: 0 8px 8px 0; padding: 8px 8px 8px 4px; margin-left: -1px; }
+.nav-drop-toggle .icon { width: 0.9em; height: 0.9em; transition: transform .15s; }
+.nav-drop.aberto .nav-drop-toggle .icon, .nav-drop:hover .nav-drop-toggle .icon { transform: rotate(180deg); }
+.nav-menu {
+  display: none; position: absolute; top: calc(100% + 8px); right: 0; z-index: 50;
+  min-width: 190px; padding: 6px; background: #fff;
+  border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow-lg);
+}
+.nav-menu a { width: 100%; border-radius: 8px; }
+.nav-drop:hover .nav-menu, .nav-drop:focus-within .nav-menu, .nav-drop.aberto .nav-menu { display: grid; }
+.portal { display: flex; flex-direction: column; gap: 28px; }
+.portal-intro { max-width: 680px; }
+.portal-intro h2 {
+  margin: 6px 0 10px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;
+  font-size: clamp(2rem, 4.5vw, 3rem); color: var(--pin);
+}
+.portal-intro p { margin: 0; max-width: 620px; }
+.portal-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.portal-card {
+  display: flex; flex-direction: column; text-decoration: none; overflow: hidden;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--shadow); transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.portal-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--green); }
+.portal-card-risco:hover { border-color: var(--danger); }
+.portal-card img { display: block; width: 100%; height: auto; background: #f7fbf7; }
+.portal-card-risco img { background: #fdf6f5; }
+.portal-card-corpo { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px 20px; }
+.portal-card h3 { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--ink); }
+.portal-card p { margin: 0; color: var(--ink-soft); }
+.portal-card-meta { margin-top: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--green-dark); }
+.portal-card-risco .portal-card-meta { color: var(--danger); }
 .nav-user {
   display: inline-flex; align-items: center;
   max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -662,6 +697,7 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
   .hero { padding: 28px 24px; gap: 18px; }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .riscos-corpo { grid-template-columns: 1fr; }
+  .portal-cards { grid-template-columns: 1fr; }
   .resumo { grid-template-columns: 1fr; }
   .proc-topo { grid-template-columns: 1fr; }
   .proc-acoes { flex-direction: row; flex-wrap: wrap; min-width: 0; }
@@ -669,7 +705,8 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
 @media (max-width: 720px) {
   .topbar-title { display: none; }
   .topbar-inner { justify-content: space-between; }
-  .nav a span, .nav-sair span, .nav-user { display: none; }
+  .nav > a span, .nav-drop > a span, .nav-sair span, .nav-user { display: none; }
+  .nav-menu a span { display: inline; }
   .logo-set { height: 44px; } .logo-idt { height: 32px; }
   .hero { padding: 22px; }
   .hero-texto { padding-left: 0; }
