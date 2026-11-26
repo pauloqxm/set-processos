@@ -333,9 +333,88 @@ window.DADOS = (function () {
     throw new Error("Riscos indisponíveis");
   }
 
+  function situacaoDe(txt) {
+    const rotulo = limpar(txt).replace(/\.+$/, "");
+    const n = semAcento(rotulo);
+    if (n.startsWith("em andamento")) return { id: "andamento", rotulo: rotulo || "Em andamento" };
+    if (n.startsWith("planejad")) return { id: "planejado", rotulo: rotulo || "Planejado" };
+    if (n.startsWith("nao inici")) return { id: "nao", rotulo: rotulo || "Não iniciado" };
+    if (n.includes("permanente")) return { id: "permanente", rotulo: rotulo || "Acompanhamento permanente" };
+    if (n.includes("pactu")) return { id: "pactuacao", rotulo: rotulo || "Em fase de pactuação" };
+    return { id: (n || "outra").slice(0, 24), rotulo: rotulo || "—" };
+  }
+
+  function montarTratamento(linhas) {
+    const header = (linhas[0] || []).map((h) => semAcento(h));
+    const achar = (pred) => header.findIndex(pred);
+    const iResp = achar((h) => h === "responsavel");
+    const iProc = achar((h) => h === "processo");
+    const iEvento = achar((h) => h.startsWith("evento"));
+    const iProjeto = achar((h) => h.startsWith("projeto"));
+    const iMedida = achar((h) => h.startsWith("medida"));
+    const iBeneficio = achar((h) => h.includes("beneficio") || h.startsWith("objeto"));
+    const iArea = achar((h) => h.includes("organizacional"));
+    const iCorresp = achar((h) => h.includes("correspons"));
+    const iServidor = achar((h) => h.startsWith("servidor"));
+    const iComo = achar((h) => h.startsWith("descricao"));
+    const iCusto = achar((h) => h.startsWith("custo"));
+    const iInicio = achar((h) => h.startsWith("inicio"));
+    const iFim = achar((h) => h.startsWith("termino"));
+    const iSituacao = achar((h) => h.startsWith("situacao"));
+    if (iResp < 0 || iEvento < 0) return [];
+    const lista = [];
+    linhas.slice(1).forEach((l, i) => {
+      const pegar = (idx) => (idx < 0 ? "" : limpar(l[idx]));
+      const responsavel = pegar(iResp).toUpperCase();
+      const evento = pegar(iEvento);
+      if (!responsavel || !evento) return;
+      const situacao = situacaoDe(pegar(iSituacao));
+      const processo = pegar(iProc);
+      const medida = pegar(iMedida);
+      lista.push({
+        id: "t" + (i + 1),
+        responsavel,
+        processo,
+        evento,
+        projeto: pegar(iProjeto),
+        medida,
+        beneficio: pegar(iBeneficio),
+        area: pegar(iArea),
+        corresponsavel: pegar(iCorresp),
+        servidor: pegar(iServidor),
+        como: pegar(iComo),
+        custo: pegar(iCusto),
+        inicio: pegar(iInicio),
+        fim: pegar(iFim),
+        situacao,
+        busca: semAcento([responsavel, processo, evento, medida, pegar(iProjeto), pegar(iComo), situacao.rotulo].join(" ")),
+      });
+    });
+    return lista;
+  }
+
+  async function carregarTratamento() {
+    const tentativas = [];
+    if (C.TRATAMENTO_CSV_URL && /gid=\d+/.test(C.TRATAMENTO_CSV_URL)) tentativas.push(["ao-vivo", C.TRATAMENTO_CSV_URL]);
+    if (C.TRATAMENTO_CSV_LOCAL) tentativas.push(["local", C.TRATAMENTO_CSV_LOCAL]);
+    for (const [fonte, url] of tentativas) {
+      try {
+        const csv = await buscarTexto(url);
+        if (!/evento de risco/i.test(csv.slice(0, 800))) continue;
+        try { localStorage.setItem(C.TRATAMENTO_CACHE_KEY, JSON.stringify({ ts: Date.now(), csv })); } catch (e) {}
+        return { medidas: montarTratamento(parseCsv(csv)), fonte, atualizadoEm: new Date() };
+      } catch (e) { /* próxima fonte */ }
+    }
+    try {
+      const cache = JSON.parse(localStorage.getItem(C.TRATAMENTO_CACHE_KEY) || "null");
+      if (cache && cache.csv) return { medidas: montarTratamento(parseCsv(cache.csv)), fonte: "cache", atualizadoEm: new Date(cache.ts) };
+    } catch (e) {}
+    throw new Error("Tratamento indisponível");
+  }
+
   function normalizarBusca(t) {
     return String(t).toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
   }
 
-  return { carregar, carregarEsteira, carregarRiscos, normalizarBusca, formatarNome };
+  return { carregar, carregarEsteira, carregarRiscos, carregarTratamento, normalizarBusca, formatarNome };
 })();

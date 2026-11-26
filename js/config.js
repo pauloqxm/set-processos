@@ -11,6 +11,10 @@ window.CONFIG = (function () {
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vTz9SmWxn11UZKFmcqBflr3SZDpq2r539w7G3VDNkbiCIjlfc48NmugKtzdJRq9DogErK1Hxh3spdDm/pub?gid=934492625&single=true&output=csv";
   const RISCOS_CSV_LOCAL = "data/riscos.csv";
 
+  const TRATAMENTO_CSV_URL =
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vSPUj3DI-MYM5Xi4osswqQHDuSfXtV9RCozrziXM3u7tSn325QQ22DvdRNMAsLBKqblo8xOoqZefhMm/pub?gid=427790434&single=true&output=csv";
+  const TRATAMENTO_CSV_LOCAL = "data/tratamento.csv";
+
   const ESTEIRA_ATORES = [
     { id: "Cliente", forte: "#39b54a", clara: "#e8f7ea" },
     { id: "Agente de Crédito", forte: "#0071bc", clara: "#e6f3fb" },
@@ -211,10 +215,12 @@ window.CONFIG = (function () {
   return {
     CSV_URL, ESTEIRA_CSV_URL, ESTEIRA_CSV_LOCAL, ESTEIRA_ATORES, ESTEIRA_FASES, ESTEIRA_PALETA,
     RISCOS_CSV_URL, RISCOS_CSV_LOCAL,
+    TRATAMENTO_CSV_URL, TRATAMENTO_CSV_LOCAL,
     UNIDADES, CATEGORIAS, SISTEMAS, SIGLAS,
     CACHE_KEY: "catalogo-set-cache-v1",
     ESTEIRA_CACHE_KEY: "catalogo-set-esteira-v2",
     RISCOS_CACHE_KEY: "catalogo-set-riscos-v1",
+    TRATAMENTO_CACHE_KEY: "catalogo-set-tratamento-v1",
     PROGRESSO_KEY: "catalogo-set-progresso-v1",
     ESTEIRA_JOGO_KEY: "catalogo-set-esteira-jogo-v1",
   };

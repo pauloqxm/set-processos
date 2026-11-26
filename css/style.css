@@ -94,27 +94,28 @@ img { max-width: 100%; }
 }
 .nav-menu a { width: 100%; border-radius: 8px; }
 .nav-drop:hover .nav-menu, .nav-drop:focus-within .nav-menu, .nav-drop.aberto .nav-menu { display: grid; }
-.portal { display: flex; flex-direction: column; gap: 28px; }
+.portal { display: flex; flex-direction: column; gap: 18px; }
 .portal-intro { max-width: 680px; }
 .portal-intro h2 {
-  margin: 6px 0 10px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.05;
-  font-size: clamp(2rem, 4.5vw, 3rem); color: var(--pin);
+  margin: 4px 0 8px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.08;
+  font-size: clamp(1.55rem, 2.8vw, 2.15rem); color: var(--pin);
 }
-.portal-intro p { margin: 0; max-width: 620px; }
-.portal-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.portal-intro p { margin: 0; max-width: 620px; font-size: 0.92rem; }
+.portal-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: stretch; }
 .portal-card {
-  display: flex; flex-direction: column; text-decoration: none; overflow: hidden;
-  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  display: grid; grid-template-columns: 220px 1fr; text-decoration: none; overflow: hidden;
+  min-height: 148px;
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
   box-shadow: var(--shadow); transition: transform .15s, box-shadow .15s, border-color .15s;
 }
-.portal-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--green); }
+.portal-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--green); }
 .portal-card-risco:hover { border-color: var(--danger); }
-.portal-card img { display: block; width: 100%; height: auto; background: #f7fbf7; }
+.portal-card img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; background: #f7fbf7; }
 .portal-card-risco img { background: #fdf6f5; }
-.portal-card-corpo { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px 20px; }
-.portal-card h3 { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--ink); }
-.portal-card p { margin: 0; color: var(--ink-soft); }
-.portal-card-meta { margin-top: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--green-dark); }
+.portal-card-corpo { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; justify-content: center; }
+.portal-card h3 { margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--ink); }
+.portal-card p { margin: 0; font-size: 0.84rem; line-height: 1.4; color: var(--ink-soft); }
+.portal-card-meta { margin-top: 6px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--green-dark); }
 .portal-card-risco .portal-card-meta { color: var(--danger); }
 .nav-user {
   display: inline-flex; align-items: center;
@@ -666,6 +667,19 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
 .selo-critico { background: var(--danger-soft); color: var(--danger); }
 .selo-mitigar { background: var(--blue-soft); color: var(--blue); }
 .selo-evitar { background: #fde8d8; color: #9a3412; }
+.selo-andamento { background: var(--green-soft); color: var(--green-dark); }
+.selo-planejado { background: var(--blue-soft); color: var(--blue); }
+.selo-nao { background: #fff4d6; color: #8a6410; }
+.selo-permanente { background: var(--teal-soft); color: var(--teal); }
+.selo-pactuacao { background: #f3e8ff; color: #6b21a8; }
+.situacoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.situacao-btn {
+  display: flex; align-items: center; gap: 8px; border: 2px solid transparent; border-radius: 12px;
+  padding: 10px 14px; cursor: pointer; font: inherit; font-weight: 700;
+}
+.situacao-btn strong { font-size: 1.25rem; line-height: 1; }
+.situacao-btn span { font-size: 0.75rem; text-transform: uppercase; letter-spacing: .03em; }
+.situacao-btn.ativa { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(77, 77, 77, .12); }
 .risco-grupo + .risco-grupo { margin-top: 8px; }
 .risco-grupo-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .risco-grupo-head h3 { margin: 0; font-size: 0.95rem; font-weight: 800; }
@@ -698,6 +712,7 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .riscos-corpo { grid-template-columns: 1fr; }
   .portal-cards { grid-template-columns: 1fr; }
+  .portal-card { grid-template-columns: 180px 1fr; }
   .resumo { grid-template-columns: 1fr; }
   .proc-topo { grid-template-columns: 1fr; }
   .proc-acoes { flex-direction: row; flex-wrap: wrap; min-width: 0; }

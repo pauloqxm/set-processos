@@ -127,6 +127,8 @@
     fluxo: null,
     riscos: [],
     riscoFiltros: { dono: null, estrategia: null, celula: null, busca: "" },
+    medidas: [],
+    tratamentoFiltros: { responsavel: null, situacao: null, busca: "" },
     jogo: [],
     jogando: false,
     usuario: null,
@@ -146,44 +148,58 @@
   /* ---------- Navegação ---------- */
   function renderNav(rota) {
     const processosAtivo = ["processos", "estantes", "estante", "processo", "esteira", "legenda"].includes(rota);
-    const menu = [
+    const riscosAtivo = rota === "riscos" || rota === "tratamento";
+    const menuProcessos = [
       ["#/estantes", "layers", "Estante", rota === "estantes" || rota === "estante" || rota === "processo"],
       ["#/esteira", "route", "Esteira", rota === "esteira"],
       ["#/legenda", "palette", "Legenda", rota === "legenda"],
     ];
+    const menuRiscos = [
+      ["#/riscos", "shield", "Matriz", rota === "riscos"],
+      ["#/tratamento", "clipboard", "Tratamento", rota === "tratamento"],
+    ];
     const perfil = estado.usuario && estado.usuario.profile;
     const nome = perfil && (perfil.name || perfil.email || "");
-    $("#nav").innerHTML = `
-      <a href="#/" class="${rota === "home" ? "ativo" : ""}">${icone("home")}<span>Início</span></a>
-      <div class="nav-drop ${processosAtivo ? "ativo" : ""}">
-        <a href="#/processos" class="${processosAtivo ? "ativo" : ""}">${icone("layers")}<span>Processos</span></a>
-        <button type="button" class="nav-drop-toggle" aria-label="Abrir menu de Processos" aria-expanded="false" aria-haspopup="true">${icone("chevron")}</button>
+    const drop = (ativo, href, ic, rotulo, menu, aria) => `
+      <div class="nav-drop ${ativo ? "ativo" : ""}">
+        <a href="${href}" class="${ativo ? "ativo" : ""}">${icone(ic)}<span>${rotulo}</span></a>
+        <button type="button" class="nav-drop-toggle" aria-label="${aria}" aria-expanded="false" aria-haspopup="true">${icone("chevron")}</button>
         <div class="nav-menu" role="menu">
           ${menu.map(([h, i, t, a]) => `<a href="${h}" role="menuitem" class="${a ? "ativo" : ""}">${icone(i)}<span>${t}</span></a>`).join("")}
         </div>
-      </div>
-      <a href="#/riscos" class="${rota === "riscos" ? "ativo" : ""}">${icone("shield")}<span>Riscos</span></a>
+      </div>`;
+    $("#nav").innerHTML = `
+      <a href="#/" class="${rota === "home" ? "ativo" : ""}">${icone("home")}<span>Início</span></a>
+      ${drop(processosAtivo, "#/processos", "layers", "Processos", menuProcessos, "Abrir menu de Processos")}
+      ${drop(riscosAtivo, "#/riscos", "shield", "Riscos", menuRiscos, "Abrir menu de Riscos")}
       ${nome ? `<span class="nav-user" title="${esc(perfil.email || nome)}">${esc(nome.split(" ")[0])}</span>` : ""}
       <button type="button" class="nav-sair" id="nav-sair">${icone("logout")}<span>Sair</span></button>`;
     const sair = $("#nav-sair");
     if (sair) sair.addEventListener("click", () => SSO.sair());
-    const drop = $(".nav-drop");
-    const toggle = $(".nav-drop-toggle");
-    if (toggle && drop) {
+    $$(".nav-drop-toggle").forEach((toggle) => {
       toggle.addEventListener("click", (ev) => {
         ev.stopPropagation();
-        const aberto = drop.classList.toggle("aberto");
-        toggle.setAttribute("aria-expanded", aberto ? "true" : "false");
+        const caixa = toggle.closest(".nav-drop");
+        const aberto = !caixa.classList.contains("aberto");
+        $$(".nav-drop").forEach((d) => {
+          d.classList.remove("aberto");
+          const b = $(".nav-drop-toggle", d);
+          if (b) b.setAttribute("aria-expanded", "false");
+        });
+        if (aberto) {
+          caixa.classList.add("aberto");
+          toggle.setAttribute("aria-expanded", "true");
+        }
       });
-    }
+    });
   }
 
   document.addEventListener("click", () => {
-    const drop = $(".nav-drop");
-    const toggle = $(".nav-drop-toggle");
-    if (!drop) return;
-    drop.classList.remove("aberto");
-    if (toggle) toggle.setAttribute("aria-expanded", "false");
+    $$(".nav-drop").forEach((drop) => {
+      drop.classList.remove("aberto");
+      const toggle = $(".nav-drop-toggle", drop);
+      if (toggle) toggle.setAttribute("aria-expanded", "false");
+    });
   });
 
   function rotear() {
@@ -195,6 +211,7 @@
     if (rota === "estantes") return telaEstantes();
     if (rota === "esteira") return arg ? telaEsteira(arg) : telaListaEsteiras();
     if (rota === "riscos") return telaRiscos();
+    if (rota === "tratamento") return telaTratamento();
     if (rota === "legenda") return telaLegenda(UNID[arg] ? arg : null);
     if (rota === "processos") return telaInicio();
     return telaPortal();
@@ -283,7 +300,7 @@
             <div class="portal-card-corpo">
               <span class="eyebrow">Macrofluxos</span>
               <h3>Catálogo de Processos</h3>
-              <p>Estantes, esteiras e a legenda de quem faz cada etapa.</p>
+              <p>Estantes por tema, a esteira com o passo a passo de cada macrofluxo e a legenda de quem executa cada etapa.</p>
               <span class="portal-card-meta">${processos ? plural(processos, "processo mapeado", "processos mapeados") : "Abrir o catálogo"}</span>
             </div>
           </a>
@@ -292,7 +309,7 @@
             <div class="portal-card-corpo">
               <span class="eyebrow">Monitoramento</span>
               <h3>Riscos</h3>
-              <p>Matriz de probabilidade e impacto, com o plano de cada coordenadoria.</p>
+              <p>A matriz de probabilidade e impacto e o tratamento de cada medida, com situação, prazo e responsável.</p>
               <span class="portal-card-meta">${riscos ? plural(riscos, "risco acompanhado", "riscos acompanhados") : "Abrir o monitoramento"}</span>
             </div>
           </a>
@@ -815,6 +832,7 @@
     const u = C.UNIDADES.find((x) => x.sigla.toUpperCase() === chave);
     if (u) return u;
     if (chave === "COESA") return { sigla: "COESA", nome: "COESA", forte: "#8b5cf6", clara: "#ede9fe" };
+    if (chave === "SET") return { sigla: "SET", nome: "Secretaria do Trabalho", forte: "#39b54a", clara: "#e8f7ea" };
     return { sigla: chave || "—", nome: chave || "—", forte: "#7e7e7e", clara: "#ececec" };
   }
 
@@ -1042,6 +1060,224 @@
     $("#risco-busca").addEventListener("input", (ev) => {
       estado.riscoFiltros.busca = ev.target.value;
       sincronizarRiscos();
+    });
+  }
+
+  /* ---------- Tela: Tratamento ---------- */
+  const ORDEM_TRATAMENTO = ["SET", "COAFI", "COEMP", "COTRA", "COESA"];
+  const ORDEM_SITUACAO = ["andamento", "permanente", "pactuacao", "planejado", "nao"];
+
+  function ordemTratamento(sigla) {
+    const i = ORDEM_TRATAMENTO.indexOf(sigla);
+    return i < 0 ? 99 : i;
+  }
+
+  function ordemSituacao(id) {
+    const i = ORDEM_SITUACAO.indexOf(id);
+    return i < 0 ? 99 : i;
+  }
+
+  function medidasRecorte() {
+    const f = estado.tratamentoFiltros;
+    const termos = DADOS.normalizarBusca(f.busca).split(/\s+/).filter(Boolean);
+    return estado.medidas.filter((m) => {
+      if (f.responsavel && m.responsavel !== f.responsavel) return false;
+      if (f.situacao && m.situacao.id !== f.situacao) return false;
+      return !termos.length || termos.every((t) => m.busca.includes(t));
+    });
+  }
+
+  function htmlKpisTratamento() {
+    const M = estado.medidas;
+    const andamento = M.filter((m) => m.situacao.id === "andamento").length;
+    const paradas = M.filter((m) => m.situacao.id === "planejado" || m.situacao.id === "nao").length;
+    const donos = new Set(M.map((m) => m.responsavel)).size;
+    return `<section class="kpis">
+      <div class="kpi tom-blue"><div class="kpi-top">${icone("clipboard")} Medidas</div><div class="kpi-body"><div class="kpi-valor">${M.length}</div><div class="kpi-apoio">Ações de tratamento e controle</div></div><div class="kpi-foot">${plural(donos, "responsável", "responsáveis")}</div></div>
+      <div class="kpi tom-green"><div class="kpi-top">${icone("clipboard")} Em andamento</div><div class="kpi-body"><div class="kpi-valor">${andamento}</div><div class="kpi-apoio">Medidas já em execução</div></div><div class="kpi-foot">Acompanhar o prazo</div></div>
+      <div class="kpi tom-orange"><div class="kpi-top">${icone("clipboard")} Não iniciadas</div><div class="kpi-body"><div class="kpi-valor">${paradas}</div><div class="kpi-apoio">Planejadas ou ainda não iniciadas</div></div><div class="kpi-foot">Precisam de partida</div></div>
+      <div class="kpi tom-teal"><div class="kpi-top">${icone("users")} Responsáveis</div><div class="kpi-body"><div class="kpi-valor">${donos}</div><div class="kpi-apoio">Secretaria e coordenadorias com medida</div></div><div class="kpi-foot">${M.length - andamento - paradas} permanentes ou em pactuação</div></div>
+    </section>`;
+  }
+
+  function htmlSituacoes() {
+    const f = estado.tratamentoFiltros;
+    const vistas = [...new Map(estado.medidas.map((m) => [m.situacao.id, m.situacao.rotulo])).entries()]
+      .sort((a, b) => ordemSituacao(a[0]) - ordemSituacao(b[0]));
+    return vistas.map(([id, rotulo]) => {
+      const n = estado.medidas.filter((m) => m.situacao.id === id && (!f.responsavel || m.responsavel === f.responsavel) && (!f.busca || DADOS.normalizarBusca(f.busca).split(/\s+/).filter(Boolean).every((t) => m.busca.includes(t)))).length;
+      const ativa = f.situacao === id;
+      return `<button type="button" class="situacao-btn selo-${id}${ativa ? " ativa" : ""}" data-situacao="${esc(id)}" aria-pressed="${ativa}">
+        <strong>${n}</strong><span>${esc(rotulo)}</span>
+      </button>`;
+    }).join("");
+  }
+
+  function htmlFiltrosTratamento() {
+    const f = estado.tratamentoFiltros;
+    const donos = [...new Set(estado.medidas.map((m) => m.responsavel))].sort((a, b) => ordemTratamento(a) - ordemTratamento(b));
+    const chips = donos.map((d) => {
+      const info = infoDono(d);
+      return `<button type="button" class="filtro${f.responsavel === d ? " ativo" : ""}" data-responsavel="${esc(d)}"><span class="dot" style="background:${info.forte}"></span>${esc(info.sigla)}</button>`;
+    }).join("");
+    const limpar = (f.responsavel || f.situacao || f.busca)
+      ? `<button type="button" class="filtro" data-limpar="1">${icone("x")} Limpar</button>`
+      : "";
+    return chips + limpar;
+  }
+
+  function prazoMedida(m) {
+    if (m.inicio && m.fim) return `${m.inicio} – ${m.fim}`;
+    return m.inicio || m.fim || "";
+  }
+
+  function htmlListaTratamento() {
+    const lista = medidasRecorte();
+    if (!lista.length) return `<div class="painel vazio">${icone("search")}<p>Nenhuma medida com esses filtros.</p></div>`;
+    const grupos = new Map();
+    lista.forEach((m) => {
+      if (!grupos.has(m.responsavel)) grupos.set(m.responsavel, []);
+      grupos.get(m.responsavel).push(m);
+    });
+    return [...grupos.keys()].sort((a, b) => ordemTratamento(a) - ordemTratamento(b)).map((resp) => {
+      const info = infoDono(resp);
+      const itens = grupos.get(resp);
+      const titulo = info.nome && info.nome !== info.sigla ? info.nome : "";
+      return `<section class="risco-grupo">
+        <header class="risco-grupo-head">
+          <span class="risco-dono" style="background:${info.forte}">${esc(info.sigla)}</span>
+          <div>
+            ${titulo ? `<h3>${esc(titulo)}</h3>` : ""}
+            <p class="apoio">${plural(itens.length, "medida", "medidas")}</p>
+          </div>
+        </header>
+        <div class="risco-cards">${itens.map(cartaoMedida).join("")}</div>
+      </section>`;
+    }).join("");
+  }
+
+  function cartaoMedida(m) {
+    const info = infoDono(m.responsavel);
+    const prazo = prazoMedida(m);
+    return `<button type="button" class="risco-card" data-medida="${esc(m.id)}" style="--forte:${info.forte}">
+      <span class="risco-processo">${esc(m.processo)}</span>
+      <h3>${esc(m.evento)}</h3>
+      <div class="meta">
+        <span class="chip selo-${m.situacao.id}">${esc(m.situacao.rotulo)}</span>
+        ${prazo ? `<span class="chip">${esc(prazo)}</span>` : ""}
+      </div>
+      <p class="risco-consequencia">${esc(m.medida)}</p>
+    </button>`;
+  }
+
+  function sincronizarTratamento() {
+    const sit = $("#trat-situacoes");
+    const filtros = $("#trat-filtros");
+    const lista = $("#trat-lista");
+    if (!sit || !filtros || !lista) return;
+    const busca = $("#trat-busca");
+    const foco = document.activeElement === busca;
+    const pos = foco ? busca.selectionStart : 0;
+    sit.innerHTML = htmlSituacoes();
+    filtros.innerHTML = htmlFiltrosTratamento();
+    lista.innerHTML = htmlListaTratamento();
+    ligarTratamento();
+    if (foco && busca) {
+      busca.focus();
+      if (typeof pos === "number") busca.setSelectionRange(pos, pos);
+    }
+  }
+
+  function ligarTratamento() {
+    $$("#trat-situacoes [data-situacao]").forEach((b) => b.addEventListener("click", () => {
+      estado.tratamentoFiltros.situacao = estado.tratamentoFiltros.situacao === b.dataset.situacao ? null : b.dataset.situacao;
+      sincronizarTratamento();
+    }));
+    $$("#trat-filtros [data-responsavel]").forEach((b) => b.addEventListener("click", () => {
+      estado.tratamentoFiltros.responsavel = estado.tratamentoFiltros.responsavel === b.dataset.responsavel ? null : b.dataset.responsavel;
+      sincronizarTratamento();
+    }));
+    const limpar = $("#trat-filtros [data-limpar]");
+    if (limpar) limpar.addEventListener("click", () => {
+      estado.tratamentoFiltros = { responsavel: null, situacao: null, busca: "" };
+      const busca = $("#trat-busca");
+      if (busca) busca.value = "";
+      sincronizarTratamento();
+    });
+    $$("#trat-lista [data-medida]").forEach((b) => b.addEventListener("click", () => abrirMedida(b.dataset.medida)));
+  }
+
+  function blocoMedida(titulo, texto) {
+    return texto ? `<div><h4>${titulo}</h4><p class="descricao">${esc(texto)}</p></div>` : "";
+  }
+
+  function abrirMedida(id) {
+    const m = estado.medidas.find((x) => x.id === id);
+    if (!m) return;
+    const info = infoDono(m.responsavel);
+    const prazo = prazoMedida(m);
+    estado.passoAberto = null;
+    gaveta.innerHTML = `
+      <div class="gaveta-topo" style="--forte:${info.forte}">
+        <span class="eyebrow">${esc(info.sigla)}${info.nome !== info.sigla ? ` · ${esc(info.nome)}` : ""}</span>
+        <h3 id="gaveta-titulo">${esc(m.evento)}</h3>
+        <button class="fechar" id="fechar" aria-label="Fechar">${icone("x")}</button>
+      </div>
+      <div class="gaveta-corpo">
+        <p class="risco-processo">${esc(m.processo)}</p>
+        <div class="proc-meta">
+          <span class="chip selo-${m.situacao.id}">${esc(m.situacao.rotulo)}</span>
+          ${prazo ? `<span class="chip">${esc(prazo)}</span>` : ""}
+          ${m.custo ? `<span class="chip">${esc(m.custo)}</span>` : ""}
+        </div>
+        ${blocoMedida("Projeto ou ação", m.projeto)}
+        ${blocoMedida("Medida de tratamento", m.medida)}
+        ${blocoMedida("Benefício esperado", m.beneficio)}
+        ${blocoMedida("Área responsável", m.area)}
+        ${blocoMedida("Área corresponsável", m.corresponsavel)}
+        ${blocoMedida("Servidor responsável", m.servidor)}
+        ${blocoMedida("Como será implementada", m.como)}
+      </div>`;
+    gaveta.classList.add("aberta");
+    gaveta.setAttribute("aria-hidden", "false");
+    veu.classList.add("aberto");
+    $("#fechar").addEventListener("click", () => fecharGaveta());
+    $("#fechar").focus({ preventScroll: true });
+  }
+
+  function telaTratamento() {
+    if (!estado.medidas.length) {
+      montarTela("tratamento", `<div class="painel vazio">${icone("clipboard")}<p><strong>Nenhuma medida carregada.</strong><br/>A planilha de tratamento não pôde ser lida agora.</p></div>`, "Tratamento");
+      return;
+    }
+    const html = `
+      <div class="migalhas"><a href="#/">Início</a> › <a href="#/riscos">Riscos</a> › <span>Tratamento</span></div>
+      <div class="secao-head riscos-head">
+        <div>
+          <span class="eyebrow">${icone("clipboard")} Controle</span>
+          <h2>Tratamento e controle dos riscos</h2>
+          <p class="apoio">A medida, quem implementa e em que pé está cada ação.</p>
+        </div>
+      </div>
+      ${htmlKpisTratamento()}
+      <section class="painel" style="margin-top:18px">
+        <h2 class="painel-titulo">Situação da medida</h2>
+        <p class="apoio">Clique numa situação para ver só essas medidas. Clique de novo para limpar.</p>
+        <div class="situacoes" id="trat-situacoes">${htmlSituacoes()}</div>
+      </section>
+      <section class="riscos-lista-col" style="margin-top:16px">
+        <div class="filtros" id="trat-filtros">${htmlFiltrosTratamento()}</div>
+        <label class="busca riscos-busca" for="trat-busca">
+          ${icone("search")}
+          <input id="trat-busca" type="search" placeholder="Busque por processo, evento ou medida" value="${esc(estado.tratamentoFiltros.busca)}" autocomplete="off" />
+        </label>
+        <div id="trat-lista">${htmlListaTratamento()}</div>
+      </section>`;
+    montarTela("tratamento", html, "Tratamento");
+    ligarTratamento();
+    $("#trat-busca").addEventListener("input", (ev) => {
+      estado.tratamentoFiltros.busca = ev.target.value;
+      sincronizarTratamento();
     });
   }
 
@@ -1456,9 +1692,10 @@
       estado.porId = new Map(r.processos.map((p) => [p.id, p]));
       estado.fonte = r.fonte;
       estado.atualizadoEm = r.atualizadoEm;
-      const [esteira, riscos] = await Promise.allSettled([
+      const [esteira, riscos, tratamento] = await Promise.allSettled([
         DADOS.carregarEsteira(),
         DADOS.carregarRiscos(),
+        DADOS.carregarTratamento(),
       ]);
       if (esteira.status === "fulfilled") estado.fluxos = esteira.value.fluxos;
       else {
@@ -1469,6 +1706,11 @@
       else {
         console.warn("Riscos indisponíveis:", riscos.reason);
         estado.riscos = [];
+      }
+      if (tratamento.status === "fulfilled") estado.medidas = tratamento.value.medidas;
+      else {
+        console.warn("Tratamento indisponível:", tratamento.reason);
+        estado.medidas = [];
       }
       renderFonte();
       rotear();
