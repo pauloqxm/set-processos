@@ -1208,7 +1208,7 @@
   }
 
   function blocoMedida(titulo, texto) {
-    return texto ? `<div><h4>${titulo}</h4><p class="descricao">${esc(texto)}</p></div>` : "";
+    return texto ? `<section class="medida-bloco"><h4>${titulo}</h4><p>${esc(texto)}</p></section>` : "";
   }
 
   function abrirMedida(id) {
@@ -1223,7 +1223,7 @@
         <h3 id="gaveta-titulo">${esc(m.evento)}</h3>
         <button class="fechar" id="fechar" aria-label="Fechar">${icone("x")}</button>
       </div>
-      <div class="gaveta-corpo">
+      <div class="gaveta-corpo medida-corpo" style="--forte:${info.forte}">
         <p class="risco-processo">${esc(m.processo)}</p>
         <div class="proc-meta">
           <span class="chip selo-${m.situacao.id}">${esc(m.situacao.rotulo)}</span>

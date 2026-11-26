@@ -557,6 +557,22 @@ a.chip-sistema:hover { border-color: var(--blue); transform: translateY(-1px); }
 .gaveta-corpo { padding: 32px 20px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; }
 .gaveta-corpo .descricao { font-family: Georgia, "Times New Roman", serif; font-size: 1.08rem; line-height: 1.5; color: #2d2d2d; margin: 0; }
 .gaveta-corpo h4 { margin: 0 0 8px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-soft); font-weight: 700; }
+.gaveta-corpo.medida-corpo { background: #f4f5f6; padding: 18px 16px 24px; gap: 10px; }
+.medida-corpo .risco-processo { color: var(--pin); font-weight: 800; }
+.medida-bloco {
+  flex: none; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(77, 77, 77, .04);
+}
+.medida-bloco h4 {
+  margin: 0; padding: 8px 14px; font-size: 0.72rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--forte, var(--green-dark));
+  background: color-mix(in srgb, var(--forte, var(--green)) 14%, #fff);
+  border-bottom: 1px solid color-mix(in srgb, var(--forte, var(--green)) 28%, #fff);
+}
+.medida-bloco p {
+  margin: 0; padding: 10px 14px 12px; font-size: 0.9rem; font-weight: 500;
+  line-height: 1.45; color: var(--ink-soft);
+}
 .docs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .doc {
   display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 10px; text-decoration: none;
