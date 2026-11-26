@@ -1006,7 +1006,7 @@
         <h3 id="gaveta-titulo">${esc(r.risco)}</h3>
         <button class="fechar" id="fechar" aria-label="Fechar">${icone("x")}</button>
       </div>
-      <div class="gaveta-corpo">
+      <div class="gaveta-corpo medida-corpo" style="--forte:${info.forte}">
         <p class="risco-processo">${esc(r.processo)}</p>
         <div class="proc-meta">
           <span class="chip selo-${r.probabilidade.id}">Probabilidade ${esc(ROTULO_PROB[r.probabilidade.id])}</span>
@@ -1014,9 +1014,9 @@
           <span class="chip selo-${r.estrategia.id}">${esc(r.estrategia.rotulo)}</span>
           <span class="chip selo-${faixa.id}">${esc(faixa.rotulo)}</span>
         </div>
-        ${r.descricao ? `<div><h4>O que está em jogo</h4><p class="descricao">${esc(r.descricao)}</p></div>` : ""}
-        ${r.consequencia ? `<div><h4>Consequência</h4><p class="descricao">${esc(r.consequencia)}</p></div>` : ""}
-        ${r.plano ? `<div><h4>Plano de contingência</h4><p class="descricao">${esc(r.plano)}</p></div>` : ""}
+        ${blocoMedida("O que está em jogo", r.descricao)}
+        ${blocoMedida("Consequência", r.consequencia)}
+        ${blocoMedida("Plano de contingência", r.plano)}
       </div>`;
     gaveta.classList.add("aberta");
     gaveta.setAttribute("aria-hidden", "false");
